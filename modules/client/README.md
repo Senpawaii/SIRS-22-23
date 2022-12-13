@@ -14,6 +14,8 @@ python -m pip install -r requirements.txt
 ```
 
 ## Installing python packages
+>NOTE: Remember to only install packages while using the virtual environment.
+
 Use to install a package.
 ```bash
 py -m pip install "SomeProject"
