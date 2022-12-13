@@ -1,0 +1,109 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+		<groupId>pt.tecnico.a21.sirs.app</groupId>
+		<artifactId>SIRSproject</artifactId>
+		<version>1.0-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>frontoffice</artifactId>
+	<packaging>jar</packaging>
+	<name>${project.artifactId}</name>
+
+	<!-- Properties are variables used to customize the behavior of Maven and its plug-ins. -->
+	<properties>
+		<mainclass>pt.tecnico.sirsproject.frontoffice.FrontMain</mainclass>
+		<!-- <front.port>1</front.port> Add the port here if needed --> 
+	</properties>
+
+	<build>
+		<!-- Resources are files like properties, images, etc; used by the module.  -->
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+		<testResources>
+			<testResource>
+				<directory>src/test/resources</directory>
+				<filtering>true</filtering>
+			</testResource>
+		</testResources>
+		<!-- Plug-ins allow for the reuse of common build logic across multiple projects. 
+		They do this by executing an "action" in the context of a project's description. -->
+		<plugins>
+			<!-- The Resources plug-in handles the copying of project resources to the output directory. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>${version.maven-resources-plugin}</version>
+				<configuration>
+					<nonFilteredFileExtensions>
+						<nonFilteredFileExtension>jks</nonFilteredFileExtension>
+					</nonFilteredFileExtensions>
+				</configuration>
+			</plugin>
+			<!-- The Failsafe plug-in runs integration tests. -->
+			<plugin>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>${version.maven-failsafe-plugin}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- The Exec plug-in allows us to execute system and Java programs. -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>${version.exec-maven-plugin}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>java</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<mainClass>${mainclass}</mainClass>
+                    <sources>
+                        <source>>pt.tecnico.sirsproject.frontoffice</source>
+                    </sources>
+					<arguments>
+					</arguments>
+				</configuration>
+			</plugin>
+			<!-- The Application Assembler plug-in generates scripts for starting Java applications. 
+				All dependencies and the artifact of the project itself are placed in a generated Maven repository in a defined assemble directory. -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>appassembler-maven-plugin</artifactId>
+				<version>${version.appassembler-maven-plugin}</version>
+				<executions>
+					<execution>
+						<phase>install</phase>
+						<goals>
+							<goal>assemble</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<programs>
+						<program>
+							<mainClass>${mainclass}</mainClass>
+							<id>${project.artifactId}</id>
+						</program>
+					</programs>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
