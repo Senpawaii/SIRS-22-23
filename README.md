@@ -1,8 +1,8 @@
-# SIRS-22-23
+# SIRS-22-23 <!-- omit from toc -->
 Project developed for the course of SIRS - 22/23
 
-# Authors
-### Team 21
+# Authors <!-- omit from toc -->
+### Team 21 <!-- omit from toc -->
 | Student Number | Name          | Contact                                |
 |----------------|---------------|----------------------------------------|
 | 92496          | João Queirós  | joao.miguel.queiros@tecnico.ulisboa.pt |
@@ -29,15 +29,11 @@ Project developed for the course of SIRS - 22/23
     </a>
 </p>
 
-## Table of Contents
-- [SIRS-22-23](#sirs-22-23)
-- [Authors](#authors)
-    - [Team 21](#team-21)
-  - [Table of Contents](#table-of-contents)
-  - [Application](#application)
-  - [Architecture](#architecture)
-  - [Build](#build)
-  - [Contributions](#contributions)
+## Table of Contents <!-- omit from toc -->
+- [Application](#application)
+- [Architecture](#architecture)
+- [Build](#build)
+- [Contributions](#contributions)
 
 ## Application
 
