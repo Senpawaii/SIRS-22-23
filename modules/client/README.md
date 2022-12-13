@@ -1,5 +1,5 @@
 ## Creating a virtual environment
-Can be useful when multiple projects use different version of the same package, for example
+Can be useful when multiple projects use different versions of the same package, for example
 ```bash
 py -m venv project_development
 ```
