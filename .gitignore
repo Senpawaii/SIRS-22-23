@@ -1,3 +1,4 @@
 settings.json
 __pycache__/
 project_development/
+target/
