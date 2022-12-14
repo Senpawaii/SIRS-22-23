@@ -1,25 +1,13 @@
 package pt.tecnico.sirsproject.frontoffice;
 
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import pt.tecnico.sirsproject.frontoffice.FrontHandlers.PingHandler;
+
 import java.io.*;
 import java.net.InetSocketAddress;
 
 public class FrontMain {
-    public static class PingHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange x) throws IOException {
-            String response = "Hello there from the Front-office!";
-            x.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-            x.sendResponseHeaders(200, response.getBytes().length);
-            OutputStream out = x.getResponseBody();
-            out.write(response.getBytes());
-            out.close();
-        }
-    }
-
     public static void main(String[] args) throws IOException {
 
         int port = -1;

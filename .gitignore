@@ -1,4 +1,5 @@
 settings.json
+launch.json
 __pycache__/
 project_development/
 target/
