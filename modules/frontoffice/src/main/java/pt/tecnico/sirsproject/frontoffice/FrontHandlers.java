@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpsExchange;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -23,12 +24,13 @@ public class FrontHandlers {
 
             String response = content.toString(1);  // the argument "1" formats each entry into a seperate line
 
-            x.getResponseHeaders()
-                // .add("Access-Control-Allow-Origin", "*")
-                .set("Content-type", "application/json");
-            x.sendResponseHeaders(200, response.getBytes().length);
+            HttpsExchange sx = (HttpsExchange) x;
 
-            OutputStream out = x.getResponseBody();
+            sx.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+            sx.getResponseHeaders().set("Content-type", "application/json");
+            sx.sendResponseHeaders(200, response.getBytes().length);
+
+            OutputStream out = sx.getResponseBody();
             out.write(response.getBytes());
             out.close();
         }
