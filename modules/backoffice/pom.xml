@@ -19,6 +19,14 @@
 		<!-- <back.port>1</back.port> Add the port here if needed --> 
 	</properties>
 
+	<dependencies>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20220924</version>
+		</dependency>
+	</dependencies>
+
 	<build>
 		<!-- Resources are files like properties, images, etc; used by the module.  -->
 		<resources>

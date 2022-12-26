@@ -6,12 +6,13 @@ def run():
 
     # Start the application GUI
     gui.printPrompt()
-    username, hashed_password = gui.authenticationPrompt()
-    print(hashed_password)
+    # srv_connection = comms.connect_to_backoffice()
+
     while(True):
-        if(True):
+        username, hashed_password = gui.authenticationPrompt()
+        print(hashed_password)
         
-        # if(verify_credentials(username, hashed_password)):
+        if(comms.verify_credentials(username, hashed_password)):
             while(True):
                 gui.printSelectionMenu(username)
                 command = input("Please select an option: ")

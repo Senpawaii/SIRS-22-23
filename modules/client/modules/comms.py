@@ -1,6 +1,9 @@
 import requests
 import json
 import configparser
+import ssl
+import socket
+
 # TODO: Include logging capabilities: import logging
 
 def contactBackoffice():
@@ -32,7 +35,7 @@ def contactFrontoffice():
     print(response)
 
 
-def sendRequest(address, port):
+def sendRequest(address, port, request, ciphers,):
     URL = "https://"+ address + ":" + port
     
     headers = {
@@ -46,13 +49,35 @@ def sendRequest(address, port):
         message = template.format(type(ex).__name__, ex.args)
         print(message)
         return message
+    return json.loads(response.text)
 
-    json_response = json.loads(response.text)
 
-    # data = response.json()
-    for line in json_response:
-        print(line)
+def connect_to_backoffice(request):
+    # Load properties file
+    config = configparser.ConfigParser()
+    config.read("./resources/app.properties")
 
-    # 
-    # reply = json_response
-    # print(reply)
+    # Retrieve fields for backoffice
+    address = config['backoffice']['ip_address']
+    port = config['backoffice']['port']
+    
+    print("Contacting Back office on address " + address + " and port: " + port + "...")
+    
+    ciphers = "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"
+
+    return sendRequest(address, port, request, ciphers)
+
+
+def verify_credentials(username, hashed_password, srv_connection):
+    request = {
+        "type":"verify_auth",
+        "username":username,
+        "hash_password":hashed_password
+    }
+    json_request = json.dumps(request)
+    response = connect_to_backoffice(json_request)
+
+    print(response)
+    return False # TODO: Parse response here and return Boolean according to the answer
+    
+    

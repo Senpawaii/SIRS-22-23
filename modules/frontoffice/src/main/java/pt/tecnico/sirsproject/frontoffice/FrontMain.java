@@ -3,7 +3,7 @@ package pt.tecnico.sirsproject.frontoffice;
 import com.sun.net.httpserver.HttpsServer;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.*;
+// import com.sun.net.httpserver.*;
 
 import java.security.KeyManagementException;
 import java.security.KeyStore;

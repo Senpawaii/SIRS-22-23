@@ -32,4 +32,3 @@ def get_hash_password():
         #   - matches upper/lower characters or numbers and special characters
 
     return hashlib.sha256(password.encode()).hexdigest()
-    
