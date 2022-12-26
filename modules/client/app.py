@@ -1,23 +1,31 @@
-import requests
-import json
+import modules.gui as gui
+import modules.comms as comms
 
 def run():
-    print("This is the client source code!")
-    sendRequest()
+    # print("This is the client source code!")
 
-def sendRequest():
-    URL = "http://localhost:10000"
-    
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/46.0.2490.80'
-    }
-
-    response = requests.get(url=URL, headers=headers)
-
-
-    data = response.json()
-    print(data)
-
-    # json_response = json.loads(response.text)
-    # reply = json_response
-    # print(reply)
+    # Start the application GUI
+    gui.printPrompt()
+    username, hashed_password = gui.authenticationPrompt()
+    print(hashed_password)
+    while(True):
+        if(True):
+        
+        # if(verify_credentials(username, hashed_password)):
+            while(True):
+                gui.printSelectionMenu(username)
+                command = input("Please select an option: ")
+                match command:
+                    case "1":
+                        comms.contactBackoffice()
+                    case "2":
+                        comms.contactFrontoffice()
+                    case "3":
+                        print("Contact Actuators")
+                    case "4":
+                        print("Goodbye!")
+                        exit(0)
+                    case Any:
+                        print("Please insert a valid command.")
+        else:
+            print("Incorrect credentials. Please try again.")
