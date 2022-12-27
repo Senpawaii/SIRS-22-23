@@ -16,6 +16,8 @@
 	<!-- Properties are variables used to customize the behavior of Maven and its plug-ins. -->
 	<properties>
 		<mainclass>pt.tecnico.sirsproject.backoffice.BackMain</mainclass>
+		<backoffice.port>10000</backoffice.port>
+		<backoffice.keystorePath>../../extra_files/backoffice/ks_backoffice.jks</backoffice.keystorePath>
 		<!-- <back.port>1</back.port> Add the port here if needed --> 
 	</properties>
 
@@ -82,10 +84,9 @@
 				</executions>
 				<configuration>
 					<mainClass>${mainclass}</mainClass>
-                    <sources>
-                        <source>>pt.tecnico.sirsproject.backoffice</source>
-                    </sources>
 					<arguments>
+						<argument>${backoffice.port}</argument>
+						<argument>${backoffice.keystorePath}</argument>
 					</arguments>
 				</configuration>
 			</plugin>

@@ -19,9 +19,11 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLContext;
 
 import pt.tecnico.sirsproject.backoffice.BackHandlers.PingHandler;
+import pt.tecnico.sirsproject.backoffice.BackHandlers.AuthenticateHandler;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.util.Properties;
 
 public class BackMain {
     public static void main(String[] args) throws IOException {
@@ -29,19 +31,33 @@ public class BackMain {
         int port = -1;
         String ksFile = "";
         String password = "";
-        
-        if (args.length != 3) {
-            System.out.println("ARGS: <port> <keyStorePath> <keystorePassword>");
-            System.exit(-1);
-        }
+        Properties properties = new Properties();
+
+        // if (args.length != 2) {
+        //     System.out.println("ARGS: <port> <keyStorePath>");
+        //     System.exit(-1);
+        // }
 
         try {
             port = Integer.parseInt(args[0]);
             ksFile = args[1];
-            password = args[2];
         } catch (IllegalArgumentException e) {
             System.out.println("ARGS: <port> <keystorePassword>");
             System.exit(-1);
+        }
+
+        try {
+            System.out.println("Current directory: " + System.getProperty("user.dir"));
+            properties.load(new FileInputStream("../../extra_files/backoffice/config.properties"));
+        } catch (IOException e) {
+            System.out.println("Error reading properties file: " + e.getMessage());
+            System.exit(-1);
+        }
+
+        try {
+            password = properties.getProperty("keystore_pass");
+        } catch (IOError ioerr) {
+            System.out.println("Error reading password.");
         }
 
         try {
@@ -50,6 +66,7 @@ public class BackMain {
             // HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
             HttpsServer server = createTLSServer(port, ksFile, password);
             server.createContext("/test", new PingHandler());
+            server.createContext("/auth", new AuthenticateHandler());
             server.setExecutor(null);
 
             System.out.println("Server started on port " + port + "!");

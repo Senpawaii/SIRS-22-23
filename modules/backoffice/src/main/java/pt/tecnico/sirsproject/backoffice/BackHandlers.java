@@ -12,7 +12,9 @@ import com.sun.net.httpserver.HttpsExchange;
 
 import org.json.JSONArray;
 // import org.json.JSONException;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONPointer;
 
 
 public class BackHandlers {
@@ -43,14 +45,21 @@ public class BackHandlers {
         public void handle(HttpExchange x) throws IOException {
             // int maxRequestSize = 1024; // Check if the client is not sending a request too large!
             // x.setFixedLenghtStreamingMode(maxRequestSize); TODO: Set maximum size for requests.
-            
-            String requestMethod = x.getRequestMethod();
+
+            HttpsExchange sx = (HttpsExchange) x;
+            JSONObject reqBody;
+            String requestMethod = sx.getRequestMethod();
             if (!requestMethod.equals("POST")) {
                 //ERROR case
                 return;
             }
 
-            JSONObject reqBody = getRequestsBody(x);
+            try {
+                reqBody = getRequestsBody(sx);
+            } catch(IOException ioexc) {
+                System.out.println(ioexc);
+                return;
+            }
             String username = reqBody.getString("username");
             String hash_password = reqBody.getString("hash_password");
 
@@ -62,25 +71,33 @@ public class BackHandlers {
                 JSONObject response = new JSONObject();
                 response.put("token", token);
 
-                sendResponse(x, 200, response.toString());
+                sendResponse(sx, 200, response.toString());
             } else {
-                sendResponse(x, 401, "Invalid credentials.");
+                sendResponse(sx, 401, "Invalid credentials.");
             }
 
         }
 
-        private static JSONObject getRequestsBody(HttpExchange exc) throws IOException {
+        private static JSONObject getRequestsBody(HttpsExchange exc) throws IOException {
             BufferedReader r = new BufferedReader(new InputStreamReader(exc.getRequestBody(), "utf-8"));
             StringBuilder sb = new StringBuilder();
             
             String line = r.readLine();
             while(line != null) {
                 sb.append(line);
+                line = r.readLine();
             }
             r.close();
-            String requestBody = sb.toString();
-            
-            return new JSONObject(requestBody);
+            String requestBody = sb.toString().replaceAll("^\"|\"$", "").replaceAll("\\\\\"", "");;
+            System.out.println(requestBody);
+            JSONObject jobj;
+            try {
+                jobj = new JSONObject(requestBody);
+            } catch(JSONException jexc) {
+                System.out.println(jexc);
+                return null;
+            }
+            return jobj;
         }
 
         private static String generateSecureToken(String username) { 
@@ -97,7 +114,7 @@ public class BackHandlers {
     /* Add the other possible handlers the frontoffice might have here */
 
 
-    public static void sendResponse(HttpExchange x, int statusCode, String responseBody) throws IOException {
+    public static void sendResponse(HttpsExchange x, int statusCode, String responseBody) throws IOException {
         // TODO: Handle IOException
         x.sendResponseHeaders(statusCode, responseBody.getBytes().length);
         OutputStream out =x.getResponseBody();
