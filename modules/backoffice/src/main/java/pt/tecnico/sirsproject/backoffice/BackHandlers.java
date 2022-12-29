@@ -6,15 +6,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
 
 import org.json.JSONArray;
-// import org.json.JSONException;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONPointer;
 
 
 public class BackHandlers {
@@ -26,7 +25,7 @@ public class BackHandlers {
             content.put("Hello there from the Front-office!");
             content.put("The server is up and running :)");
 
-            String response = content.toString(1);  // the argument "1" formats each entry into a seperate line
+            String response = content.toString(1);  // the argument "1" formats each entry into a separate line
 
             HttpsExchange sx = (HttpsExchange) x;
 
@@ -41,10 +40,16 @@ public class BackHandlers {
     }
 
     public static class AuthenticateHandler implements HttpHandler {
+        private final SessionManager manager;
+
+        public AuthenticateHandler(SessionManager manager) {
+            this.manager = manager;
+        }
+
         @Override
         public void handle(HttpExchange x) throws IOException {
             // int maxRequestSize = 1024; // Check if the client is not sending a request too large!
-            // x.setFixedLenghtStreamingMode(maxRequestSize); TODO: Set maximum size for requests.
+            // x.setFixedLengthStreamingMode(maxRequestSize); TODO: Set maximum size for requests.
 
             HttpsExchange sx = (HttpsExchange) x;
             JSONObject reqBody;
@@ -56,8 +61,8 @@ public class BackHandlers {
 
             try {
                 reqBody = getRequestsBody(sx);
-            } catch(IOException ioexc) {
-                System.out.println(ioexc);
+            } catch(IOException exception) {
+                System.out.println(exception.getMessage());
                 return;
             }
             String username = reqBody.getString("username");
@@ -66,7 +71,12 @@ public class BackHandlers {
             // TODO: Sanitize Strings
 
             if(validate_credentials(username, hash_password)) {
-                String token = generateSecureToken(username);
+                // If the client already has a valid token, delete the current and generate a new one.
+                if(this.manager.hashActiveSession(username)){
+                    this.manager.deleteSession(username);
+                }
+
+                String token = this.manager.createSession(username);
 
                 JSONObject response = new JSONObject();
                 response.put("token", token);
@@ -78,8 +88,8 @@ public class BackHandlers {
 
         }
 
-        private static JSONObject getRequestsBody(HttpsExchange exc) throws IOException {
-            BufferedReader r = new BufferedReader(new InputStreamReader(exc.getRequestBody(), "utf-8"));
+        private JSONObject getRequestsBody(HttpsExchange exc) throws IOException {
+            BufferedReader r = new BufferedReader(new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             
             String line = r.readLine();
@@ -88,22 +98,17 @@ public class BackHandlers {
                 line = r.readLine();
             }
             r.close();
-            String requestBody = sb.toString().replaceAll("^\"|\"$", "").replaceAll("\\\\\"", "");;
+            String requestBody = sb.toString().replaceAll("^\"|\"$", "").replaceAll("\\\\\"", "");
             System.out.println(requestBody);
-            JSONObject jobj;
+            JSONObject json_obj;
             try {
-                jobj = new JSONObject(requestBody);
-            } catch(JSONException jexc) {
-                System.out.println(jexc);
+                json_obj = new JSONObject(requestBody);
+            } catch(JSONException exception) {
+                System.out.println(exception.getMessage());
                 return null;
             }
-            return jobj;
+            return json_obj;
         }
-
-        private static String generateSecureToken(String username) { 
-            // TODO: Generate secure session token for User username and store it: DB or in-memory cache
-            return "ThisIsTotallySafe";
-        } 
 
         private static boolean validate_credentials(String username, String hash_password) {
             // TODO: contact DB and check credentials
@@ -111,7 +116,7 @@ public class BackHandlers {
         }
     }
 
-    /* Add the other possible handlers the frontoffice might have here */
+    /* Add the other possible handlers the FrontOffice might have here */
 
 
     public static void sendResponse(HttpsExchange x, int statusCode, String responseBody) throws IOException {

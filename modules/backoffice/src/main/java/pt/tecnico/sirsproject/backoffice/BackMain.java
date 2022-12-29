@@ -27,6 +27,7 @@ import java.util.Properties;
 public class BackMain {
     public static void main(String[] args) {
 
+        SessionManager manager = new SessionManager();
         int port = -1;
         String ksFile = "";
 
@@ -62,7 +63,7 @@ public class BackMain {
 
             HttpsServer server = createTLSServer(port, ksFile, password);
             server.createContext("/test", new PingHandler());
-            server.createContext("/auth", new AuthenticateHandler());
+            server.createContext("/auth", new AuthenticateHandler(manager));
             server.setExecutor(null);
             System.out.println("Server started on port " + port + "!");
             server.start();
