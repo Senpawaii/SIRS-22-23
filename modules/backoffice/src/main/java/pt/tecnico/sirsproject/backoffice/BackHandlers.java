@@ -7,13 +7,20 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Base64.Decoder;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.google.gson.Gson;
+
 
 
 public class BackHandlers {
@@ -52,21 +59,36 @@ public class BackHandlers {
             // x.setFixedLengthStreamingMode(maxRequestSize); TODO: Set maximum size for requests.
 
             HttpsExchange sx = (HttpsExchange) x;
-            JSONObject reqBody;
             String requestMethod = sx.getRequestMethod();
             if (!requestMethod.equals("POST")) {
                 //ERROR case
                 return;
             }
 
+            AuthRequest auth_request;
             try {
-                reqBody = getRequestsBody(sx);
+                auth_request = parseRequestToJSON(sx);
             } catch(IOException exception) {
                 System.out.println(exception.getMessage());
                 return;
             }
-            String username = reqBody.getString("username");
-            String hash_password = reqBody.getString("hash_password");
+
+            // TODO: Add validation for .getString
+            byte[] encrypted_shared_key_b64 = auth_request.getEncrypted_shared_key().getBytes();
+            System.out.println("Encrypted shared key base 64: " + Base64.getDecoder().decode(encrypted_shared_key_b64).toString());
+            byte[] encrypted_shared_key = Base64.getDecoder().decode(encrypted_shared_key_b64);
+            byte[] shared_key_b64 = BackMain.backoffice.decryptWithRSA(encrypted_shared_key);
+//            byte[] shared_key_no_64 = BackMain.backoffice.decryptWithRSA(auth_request.getEncrypted_shared_key_no_64().getBytes());
+            byte[] shared_key = Base64.getDecoder().decode(shared_key_b64);
+
+            String encrypted_username_b64 = auth_request.getEncrypted_username();
+            byte[] encrypted_username = Base64.getDecoder().decode(encrypted_username_b64.getBytes());
+
+            String encrypted_hash_password_b64 = auth_request.getEncrypted_hash_password();
+            byte[] encrypted_hash_password = Base64.getDecoder().decode(encrypted_hash_password_b64.getBytes());
+
+            String username = BackMain.backoffice.decryptWithSymmetric(encrypted_username, shared_key);
+            String hash_password = BackMain.backoffice.decryptWithSymmetric(encrypted_hash_password, shared_key);
 
             // TODO: Sanitize Strings
 
@@ -88,26 +110,26 @@ public class BackHandlers {
 
         }
 
-        private JSONObject getRequestsBody(HttpsExchange exc) throws IOException {
-            BufferedReader r = new BufferedReader(new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            
-            String line = r.readLine();
-            while(line != null) {
-                sb.append(line);
-                line = r.readLine();
-            }
-            r.close();
-            String requestBody = sb.toString().replaceAll("^\"|\"$", "").replaceAll("\\\\\"", "");
-            System.out.println(requestBody);
-            JSONObject json_obj;
+        private AuthRequest parseRequestToJSON(HttpsExchange exc) throws IOException {
+            InputStreamReader isr = new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8);
+            BufferedReader br = new BufferedReader(isr);
+            String requestBody = removeQuotesAndUnescape(br.readLine());
+
+            Gson gson = new Gson();
+            AuthRequest request = null;
             try {
-                json_obj = new JSONObject(requestBody);
-            } catch(JSONException exception) {
-                System.out.println(exception.getMessage());
-                return null;
+                request = gson.fromJson(requestBody, AuthRequest.class);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
             }
-            return json_obj;
+
+            return request;
+        }
+
+        private String removeQuotesAndUnescape(String uncleanJson) {
+            String noQuotes = uncleanJson.replaceAll("^\"|\"$", "");
+
+            return StringEscapeUtils.unescapeJava(noQuotes);
         }
 
         private static boolean validate_credentials(String username, String hash_password) {

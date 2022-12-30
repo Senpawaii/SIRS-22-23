@@ -22,19 +22,21 @@ import pt.tecnico.sirsproject.backoffice.BackHandlers.AuthenticateHandler;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.util.Properties;
 
 public class BackMain {
+    static BackOffice backoffice;
+
     public static void main(String[] args) {
+//        GenerateJKS jks = new GenerateJKS(); // Generate JKS keystore
 
         SessionManager manager = new SessionManager();
         int port = -1;
         String ksFile = "";
 
-         if (args.length != 2) {
+        if (args.length != 2) {
              System.out.println("ARGS: <port> <keyStorePath>");
              System.exit(-1);
-         }
+        }
 
         try {
             port = Integer.parseInt(args[0]);
@@ -46,22 +48,12 @@ public class BackMain {
 
         validateArgs(port, ksFile);
 
-        // Load properties file
-        Properties properties = new Properties();
-        try {
-            properties.load(new FileInputStream("../../extra_files/backoffice/config.properties")); // TODO: Find a more reliable way of using relative paths
-        } catch (IOException e) {
-            System.out.println("Error reading properties file: " + e.getMessage());
-            System.exit(-1);
-        }
-
+        backoffice = new BackOffice(ksFile);
 
         // Start HTTPS server
-        String password = properties.getProperty("keystore_pass");
         try {
             System.out.println("Starting server on port " + port + "...");
-
-            HttpsServer server = createTLSServer(port, ksFile, password);
+            HttpsServer server = backoffice.createTLSServer(port);
             server.createContext("/test", new PingHandler());
             server.createContext("/auth", new AuthenticateHandler(manager));
             server.setExecutor(null);
@@ -92,79 +84,5 @@ public class BackMain {
             System.out.println("Error: Failed to load ksFile." + e.getMessage());
             System.exit(1);
         }
-    }
-
-    private static HttpsServer createTLSServer(int port, String ksFile, String password) 
-        throws TLSServerException {
-        
-        InetSocketAddress address = new InetSocketAddress(port);
-
-        // Initialize the server
-        HttpsServer server;
-        try {
-            server = HttpsServer.create(address, 0);
-        } catch (IOException e) {
-            throw new TLSServerException("Error: Couldn't create server on requested port " + port + ".", e);
-        }
-
-        // Initialize the SSL context
-        SSLContext context;
-        try {
-            context = SSLContext.getInstance("TLS");
-        } catch (NoSuchAlgorithmException e) {
-            throw new TLSServerException("Error: Couldn't find requested SSL Context algorithm.", e);
-        }
-
-        // Initialize the keystore
-        char[] pass = password.toCharArray();
-        KeyStore keyStore;
-        try {
-            keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(new FileInputStream(ksFile), pass);
-        } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
-            throw new TLSServerException("Error: Couldn't load KeyStore.", e);
-        }
-
-        // Initialize the key and trust manager factories
-        KeyManagerFactory keyManager;
-        TrustManagerFactory trustManager;
-
-        try {
-            keyManager = KeyManagerFactory.getInstance("SunX509");
-            trustManager = TrustManagerFactory.getInstance("SunX509");
-            keyManager.init(keyStore, pass);
-            trustManager.init(keyStore);
-        } catch (NoSuchAlgorithmException | KeyStoreException | UnrecoverableKeyException e) {
-            throw new TLSServerException("Error: Couldn't initialize key or trust manager factory.", e);
-        }
-
-        // Initialize the SSL context with the key and trust managers
-        try {
-            context.init(keyManager.getKeyManagers(), trustManager.getTrustManagers(), null);
-        } catch (KeyManagementException e) {
-            throw new TLSServerException("Error: Unable to initialize SSL context.", e);
-        }
-
-        // Set the SSL context for the backoffice server
-        server.setHttpsConfigurator(new HttpsConfigurator(context) {
-            public void configure(HttpsParameters params) {
-                try {
-                    SSLContext sslcontext = SSLContext.getDefault();
-                    SSLEngine engine = sslcontext.createSSLEngine();
-                    params.setNeedClientAuth(false);
-                    params.setCipherSuites(engine.getEnabledCipherSuites());
-                    params.setProtocols(engine.getEnabledProtocols());
-
-                    // set SSL parameters
-                    SSLParameters sslparams = sslcontext.getDefaultSSLParameters();
-                    params.setSSLParameters(sslparams);
-                    System.out.println("Server connected on port " + port + ".");
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                    System.out.println("Failed to create server.");
-                }
-            }
-        });
-        return server;
     }
 }
