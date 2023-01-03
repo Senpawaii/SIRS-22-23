@@ -3,32 +3,39 @@ package pt.tecnico.sirsproject.backoffice;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
+import pt.tecnico.sirsproject.security.SensorKey;
+import pt.tecnico.sirsproject.security.SymmetricKeyEncryption;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.SecretKey;
 import javax.net.ssl.*;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Base64;
 import java.util.Properties;
-import java.util.Scanner;
 
 public class BackOffice {
     private static KeyStore keystore;
     private Properties properties;
     private KeyManagerFactory keyManager;
     private TrustManagerFactory trustManager;
+    private SensorKey sensorKey;
+    private SessionManager manager = new SessionManager();
+
 
     public BackOffice(String keystorePath) {
         loadProperties();
         loadKeyStore(keystorePath);
         initializeKeyAndTrustManager();
+        createSensorKey();
+    }
+
+    private void createSensorKey() {
+        SecretKey aeskey = new SymmetricKeyEncryption().createAESKey();
+        this.sensorKey = new SensorKey(aeskey);
     }
 
     private void loadProperties() {
@@ -143,22 +150,15 @@ public class BackOffice {
         return decryptedRequest;
     }
 
-    String decryptWithSymmetric(byte[] encrypted_data, byte[] key) {
-        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
-        String unencrypted_data = "";
-        try {
-            Cipher aes_cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+    String decryptWithSymmetric(String encrypted_data, byte[] key) {
+        return SymmetricKeyEncryption.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
+    }
 
-            byte[] iv_array = new byte[aes_cipher.getBlockSize()];
-            IvParameterSpec iv = new IvParameterSpec(iv_array);
+    public SensorKey getSensorKey() {
+        return this.sensorKey;
+    }
 
-            aes_cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, iv);
-
-            unencrypted_data = new String(aes_cipher.doFinal(encrypted_data),
-                    StandardCharsets.UTF_8);
-        } catch(Exception e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-        return unencrypted_data;
+    public SessionManager getManager() {
+        return this.manager;
     }
 }

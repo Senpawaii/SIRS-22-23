@@ -1,4 +1,4 @@
-package pt.tecnico.sirsproject.backoffice;
+package pt.tecnico.sirsproject.frontoffice;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,9 +24,5 @@ public class SessionManager {
 
     void deleteSession(String username) {
         sessions.remove(username);
-    }
-    
-    public SessionToken getSession(String username) {
-        return sessions.get(username);
     }
 }

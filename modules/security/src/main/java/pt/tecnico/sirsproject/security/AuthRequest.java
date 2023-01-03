@@ -1,4 +1,4 @@
-package pt.tecnico.sirsproject.backoffice;
+package pt.tecnico.sirsproject.security;
 
 public class AuthRequest {
     private String type;

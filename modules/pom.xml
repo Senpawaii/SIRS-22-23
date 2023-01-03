@@ -20,7 +20,8 @@
         <module>backoffice</module>
         <module>frontoffice</module>
         <module>sensors</module>
-        <!-- <module>modules/client</module> -->
+        <module>client</module>
+        <module>security</module>
     </modules>
 
     

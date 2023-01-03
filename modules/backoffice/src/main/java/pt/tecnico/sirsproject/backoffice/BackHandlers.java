@@ -6,21 +6,22 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.time.Instant;
 import java.util.Base64;
-import java.util.Base64.Decoder;
+import java.util.Objects;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.google.gson.Gson;
-
+import pt.tecnico.sirsproject.security.*;
+import pt.tecnico.sirsproject.security.RequestParsing;
 
 
 public class BackHandlers {
@@ -67,7 +68,7 @@ public class BackHandlers {
 
             AuthRequest auth_request;
             try {
-                auth_request = parseRequestToJSON(sx);
+                auth_request = RequestParsing.parseAuthRequestToJSON(sx);
             } catch(IOException exception) {
                 System.out.println(exception.getMessage());
                 return;
@@ -75,10 +76,8 @@ public class BackHandlers {
 
             // TODO: Add validation for .getString
             byte[] encrypted_shared_key_b64 = auth_request.getEncrypted_shared_key().getBytes();
-            System.out.println("Encrypted shared key base 64: " + Base64.getDecoder().decode(encrypted_shared_key_b64).toString());
             byte[] encrypted_shared_key = Base64.getDecoder().decode(encrypted_shared_key_b64);
             byte[] shared_key_b64 = BackMain.backoffice.decryptWithRSA(encrypted_shared_key);
-//            byte[] shared_key_no_64 = BackMain.backoffice.decryptWithRSA(auth_request.getEncrypted_shared_key_no_64().getBytes());
             byte[] shared_key = Base64.getDecoder().decode(shared_key_b64);
 
             String encrypted_username_b64 = auth_request.getEncrypted_username();
@@ -87,8 +86,8 @@ public class BackHandlers {
             String encrypted_hash_password_b64 = auth_request.getEncrypted_hash_password();
             byte[] encrypted_hash_password = Base64.getDecoder().decode(encrypted_hash_password_b64.getBytes());
 
-            String username = BackMain.backoffice.decryptWithSymmetric(encrypted_username, shared_key);
-            String hash_password = BackMain.backoffice.decryptWithSymmetric(encrypted_hash_password, shared_key);
+            String username = BackMain.backoffice.decryptWithSymmetric(Base64.getEncoder().encodeToString(encrypted_username), shared_key);
+            String hash_password = BackMain.backoffice.decryptWithSymmetric(Base64.getEncoder().encodeToString(encrypted_hash_password), shared_key);
 
             // TODO: Sanitize Strings
 
@@ -97,39 +96,19 @@ public class BackHandlers {
                 if(this.manager.hashActiveSession(username)){
                     this.manager.deleteSession(username);
                 }
-
                 String token = this.manager.createSession(username);
 
-                JSONObject response = new JSONObject();
-                response.put("token", token);
+                // Encrypt the token with the shared symmetric key
+                String encrypted_token = SymmetricKeyEncryption.encrypt(token, Base64.getEncoder().encodeToString(shared_key));
 
+                JSONObject response = new JSONObject();
+                response.put("encrypted_token", encrypted_token);
+                System.out.println("Auth Request:" + username + " token: " + token);
                 sendResponse(sx, 200, response.toString());
             } else {
                 sendResponse(sx, 401, "Invalid credentials.");
             }
 
-        }
-
-        private AuthRequest parseRequestToJSON(HttpsExchange exc) throws IOException {
-            InputStreamReader isr = new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8);
-            BufferedReader br = new BufferedReader(isr);
-            String requestBody = removeQuotesAndUnescape(br.readLine());
-
-            Gson gson = new Gson();
-            AuthRequest request = null;
-            try {
-                request = gson.fromJson(requestBody, AuthRequest.class);
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
-
-            return request;
-        }
-
-        private String removeQuotesAndUnescape(String uncleanJson) {
-            String noQuotes = uncleanJson.replaceAll("^\"|\"$", "");
-
-            return StringEscapeUtils.unescapeJava(noQuotes);
         }
 
         private static boolean validate_credentials(String username, String hash_password) {
@@ -138,8 +117,51 @@ public class BackHandlers {
         }
     }
 
-    /* Add the other possible handlers the FrontOffice might have here */
+    /* Add the other possible handlers the BackOffice might have here */
+    public static class SensorKeyHandler implements HttpHandler {
+        private final SensorKey sensorKey;
+        private final SessionManager manager;
+        public SensorKeyHandler(SensorKey key, SessionManager manager) {
+            this.sensorKey = key;
+            this.manager = manager;
+        }
 
+        @Override
+        public void handle(HttpExchange ex) throws IOException {
+            HttpsExchange sx = (HttpsExchange) ex;
+            String requestMethod = sx.getRequestMethod();
+            if (!requestMethod.equals("POST")) {
+                //ERROR case
+                return;
+            }
+
+            SensorKeyRequest sensorKey_request;
+            try {
+                sensorKey_request = RequestParsing.parseSensorKeyRequestToJSON(sx);
+            } catch(IOException exception) {
+                System.out.println(exception.getMessage());
+                return;
+            }
+
+            // Verify session token
+            String sessionToken = sensorKey_request.getSession_token();
+            String username = sensorKey_request.getUsername();
+
+            if(validate_session(username, sessionToken, manager)) {
+                JSONObject response = new JSONObject();
+                response.put("symmetricKey", this.sensorKey);
+                System.out.println("SensorKey Request:" + username + " sensorKey: " + sensorKey);
+                sendResponse(sx, 200, response.toString());
+            } else {
+                sendResponse(sx, 401, "Invalid credentials.");
+            }
+
+
+                if(this.manager.hashActiveSession(username)){
+
+                }
+        }
+    }
 
     public static void sendResponse(HttpsExchange x, int statusCode, String responseBody) throws IOException {
         // TODO: Handle IOException
@@ -147,5 +169,12 @@ public class BackHandlers {
         OutputStream out =x.getResponseBody();
         out.write(responseBody.getBytes());
         out.close();
+    }
+
+    private static boolean validate_session(String username, String sessionToken, SessionManager manager) {
+        SessionToken token = manager.getSession(username);
+        if(token != null && sessionToken.equals(token.getToken()) && token.getDeadline().isAfter(Instant.now()))
+           return true;
+        return false;
     }
 }
