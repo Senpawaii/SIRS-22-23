@@ -20,7 +20,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.google.gson.Gson;
-
+import pt.tecnico.sirsproject.security.SymmetricKey;
 
 
 public class BackHandlers {
@@ -75,10 +75,8 @@ public class BackHandlers {
 
             // TODO: Add validation for .getString
             byte[] encrypted_shared_key_b64 = auth_request.getEncrypted_shared_key().getBytes();
-            System.out.println("Encrypted shared key base 64: " + Base64.getDecoder().decode(encrypted_shared_key_b64).toString());
             byte[] encrypted_shared_key = Base64.getDecoder().decode(encrypted_shared_key_b64);
             byte[] shared_key_b64 = BackMain.backoffice.decryptWithRSA(encrypted_shared_key);
-//            byte[] shared_key_no_64 = BackMain.backoffice.decryptWithRSA(auth_request.getEncrypted_shared_key_no_64().getBytes());
             byte[] shared_key = Base64.getDecoder().decode(shared_key_b64);
 
             String encrypted_username_b64 = auth_request.getEncrypted_username();
@@ -87,8 +85,8 @@ public class BackHandlers {
             String encrypted_hash_password_b64 = auth_request.getEncrypted_hash_password();
             byte[] encrypted_hash_password = Base64.getDecoder().decode(encrypted_hash_password_b64.getBytes());
 
-            String username = BackMain.backoffice.decryptWithSymmetric(encrypted_username, shared_key);
-            String hash_password = BackMain.backoffice.decryptWithSymmetric(encrypted_hash_password, shared_key);
+            String username = BackMain.backoffice.decryptWithSymmetric(Base64.getEncoder().encodeToString(encrypted_username), shared_key);
+            String hash_password = BackMain.backoffice.decryptWithSymmetric(Base64.getEncoder().encodeToString(encrypted_hash_password), shared_key);
 
             // TODO: Sanitize Strings
 
@@ -97,12 +95,14 @@ public class BackHandlers {
                 if(this.manager.hashActiveSession(username)){
                     this.manager.deleteSession(username);
                 }
-
                 String token = this.manager.createSession(username);
 
-                JSONObject response = new JSONObject();
-                response.put("token", token);
+                // Encrypt the token with the shared symmetric key
+                String encrypted_token = SymmetricKey.encrypt(token, Base64.getEncoder().encodeToString(shared_key));
 
+                JSONObject response = new JSONObject();
+                response.put("encrypted_token", encrypted_token);
+                System.out.println("Auth Request:" + username + " token: " + token);
                 sendResponse(sx, 200, response.toString());
             } else {
                 sendResponse(sx, 401, "Invalid credentials.");

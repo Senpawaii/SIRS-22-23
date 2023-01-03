@@ -3,6 +3,7 @@ package pt.tecnico.sirsproject.backoffice;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
+import pt.tecnico.sirsproject.security.SymmetricKey;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -143,22 +144,7 @@ public class BackOffice {
         return decryptedRequest;
     }
 
-    String decryptWithSymmetric(byte[] encrypted_data, byte[] key) {
-        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
-        String unencrypted_data = "";
-        try {
-            Cipher aes_cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-
-            byte[] iv_array = new byte[aes_cipher.getBlockSize()];
-            IvParameterSpec iv = new IvParameterSpec(iv_array);
-
-            aes_cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, iv);
-
-            unencrypted_data = new String(aes_cipher.doFinal(encrypted_data),
-                    StandardCharsets.UTF_8);
-        } catch(Exception e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-        return unencrypted_data;
+    String decryptWithSymmetric(String encrypted_data, byte[] key) {
+        return SymmetricKey.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
     }
 }

@@ -2,15 +2,12 @@ package pt.tecnico.sirsproject.client;
 
 import com.google.common.hash.Hashing;
 
-import java.io.Console;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-public class Inputsecurity {
-    public static Scanner sc = new Scanner(System.in);
-
-    static String getUsername() {
+public class InputSecurity {
+    static String getUsername(Scanner sc) {
         while (true) {
             System.out.print("Username: ");
             String username = sc.nextLine();
@@ -23,17 +20,9 @@ public class Inputsecurity {
         }
     }
 
-    static String getHashPassword() {
-//        Console console = System.console();
-//        if (console == null) {
-//            System.out.println("Couldn't get Console instance");
-//            System.exit(1);
-//        }
-//        String passwordString = new String(console.readPassword("Password: "));
-
+    static String getHashPassword(Scanner sc) {
         System.out.print("Password: ");
         String passwordString = sc.nextLine();
-        sc.close();
         return Hashing.sha256().hashString(passwordString, StandardCharsets.UTF_8).toString();
     }
 }

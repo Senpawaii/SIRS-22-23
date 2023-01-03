@@ -3,6 +3,8 @@ package pt.tecnico.sirsproject.client;
 import java.util.Scanner;
 
 public class GUI {
+    static Scanner sc = new Scanner(System.in);
+
     public static void printPrompt() {
         System.out.println("==================================");
         System.out.println("Welcome to StarDrive Systems");
@@ -12,13 +14,12 @@ public class GUI {
 
     public static String[] authenticationPrompt() {
         System.out.println("Please authenticate yourself: ");
-        String username = Inputsecurity.getUsername();
-        String hashedPassword = Inputsecurity.getHashPassword();
+        String username = InputSecurity.getUsername(sc);
+        String hashedPassword = InputSecurity.getHashPassword(sc);
         return new String[] {username, hashedPassword};
     }
 
     public static String printSelectionMenu(String username) {
-        Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.println("-----------------------------------");
             System.out.println("Hello " + username + ", how can we help you today?");
@@ -28,11 +29,11 @@ public class GUI {
             System.out.println("3 - Contact Actuators/Sensors");
             System.out.println("4 - Quit");
             System.out.println();
-            String command = scanner.nextLine();
+            String command = sc.nextLine();
             switch (command) {
                 case "1":
                     while (true) {
-                        command = printBackofficeMenu();
+                        command = printBackofficeMenu(sc);
                         if (command.equals("1") || command.equals("2") || command.equals("3")) {
                             return "A" + command;
                         } else if (command.equals("4")) {
@@ -59,7 +60,7 @@ public class GUI {
         }
     }
 
-    public static String printBackofficeMenu() {
+    public static String printBackofficeMenu(Scanner sc) {
         System.out.println("-----------------------------------");
         System.out.println("=BackOffice Menu=");
         System.out.println("-----------------------------------");
@@ -69,7 +70,6 @@ public class GUI {
         System.out.println("3 - Buy Parts");
         System.out.println("4 - Back");
         System.out.println();
-        Scanner scanner = new Scanner(System.in);
-        return scanner.nextLine();
+        return sc.nextLine();
     }
 }
