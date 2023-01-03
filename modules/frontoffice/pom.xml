@@ -16,14 +16,31 @@
 	<!-- Properties are variables used to customize the behavior of Maven and its plug-ins. -->
 	<properties>
 		<mainclass>pt.tecnico.sirsproject.frontoffice.FrontMain</mainclass>
+		<frontoffice.port>10001</frontoffice.port>
+		<frontoffice.keystorePath>../../extra_files/frontoffice/frontoffice.jks</frontoffice.keystorePath>
 		<!-- <front.port>1</front.port> Add the port here if needed --> 
 	</properties>
 
 	<dependencies>
 		<dependency>
+			<groupId>pt.tecnico.a21.sirs.app</groupId>
+			<artifactId>security</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
 			<version>20220924</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.10</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-text</artifactId>
+			<version>1.10.0</version>
 		</dependency>
 	</dependencies>
 
@@ -83,6 +100,8 @@
 				<configuration>
 					<mainClass>${mainclass}</mainClass>
 					<arguments>
+						<argument>${frontoffice.port}</argument>
+						<argument>${frontoffice.keystorePath}</argument>
 					</arguments>
 				</configuration>
 			</plugin>
