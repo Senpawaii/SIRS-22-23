@@ -6,6 +6,7 @@ import java.util.Map;
 public class ClientMain {
     public static void main(String[] args) {
         ClientComms comms = new ClientComms();
+        Client client;
 
         SessionToken sessiontoken;
         String symmetric_key_backoffice;
@@ -19,7 +20,7 @@ public class ClientMain {
             sessiontoken = (SessionToken) values.get("sessionToken");
             symmetric_key_backoffice = (String) values.get("symmetricKey");
              if(sessiontoken != null) {
-                Client client = new Client(user_pass_hash[0], user_pass_hash[1]);
+                 client = new Client(user_pass_hash[0], user_pass_hash[1]);
 
                 selectionMenu:
                 while(true) {
@@ -27,7 +28,7 @@ public class ClientMain {
                     switch (action) {
                         case "A1": // Ask for symmetric key to use with Sensors/ Actuators
                             try{
-                                sharedKey_sensors = comms.requestSensorcKey(sessiontoken, symmetric_key_backoffice);
+                                sharedKey_sensors = comms.requestSensorKey(client.getUsername(), sessiontoken);
                             } catch (Exception e) {
                                 System.out.println("Session token invalid/ expired. Please authenticate again");
                                 break selectionMenu;

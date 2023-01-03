@@ -3,33 +3,39 @@ package pt.tecnico.sirsproject.backoffice;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
-import pt.tecnico.sirsproject.security.SymmetricKey;
+import pt.tecnico.sirsproject.security.SensorKey;
+import pt.tecnico.sirsproject.security.SymmetricKeyEncryption;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.SecretKey;
 import javax.net.ssl.*;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Base64;
 import java.util.Properties;
-import java.util.Scanner;
 
 public class BackOffice {
     private static KeyStore keystore;
     private Properties properties;
     private KeyManagerFactory keyManager;
     private TrustManagerFactory trustManager;
+    private SensorKey sensorKey;
+    private SessionManager manager = new SessionManager();
+
 
     public BackOffice(String keystorePath) {
         loadProperties();
         loadKeyStore(keystorePath);
         initializeKeyAndTrustManager();
+        createSensorKey();
+    }
+
+    private void createSensorKey() {
+        SecretKey aeskey = new SymmetricKeyEncryption().createAESKey();
+        this.sensorKey = new SensorKey(aeskey);
     }
 
     private void loadProperties() {
@@ -145,6 +151,14 @@ public class BackOffice {
     }
 
     String decryptWithSymmetric(String encrypted_data, byte[] key) {
-        return SymmetricKey.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
+        return SymmetricKeyEncryption.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
+    }
+
+    public SensorKey getSensorKey() {
+        return this.sensorKey;
+    }
+
+    public SessionManager getManager() {
+        return this.manager;
     }
 }

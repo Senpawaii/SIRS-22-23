@@ -1,11 +1,12 @@
 package pt.tecnico.sirsproject.client;
 
 import pt.tecnico.sirsproject.security.SendRequest;
-import pt.tecnico.sirsproject.security.SymmetricKey;
+import pt.tecnico.sirsproject.security.SensorKeyRequest;
+import pt.tecnico.sirsproject.security.SensorKeyResponse;
+import pt.tecnico.sirsproject.security.SymmetricKeyEncryption;
 
 import com.google.gson.Gson;
 
-import javax.crypto.SecretKey;
 import java.io.*;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -56,7 +57,7 @@ public class ClientComms {
     public Map<String, Object> verify_credentials(String username, String hashed_password) {
         File publicKeyFile = new File("../../extra_files/backoffice/public.key");
 
-        String encodedSymmetricKey = new SymmetricKey().getEncodedSymmetricKey();
+        String encodedSymmetricKey = new SymmetricKeyEncryption().getEncodedSymmetricKey();
         System.out.println("EncodedSymmetricKey:" + encodedSymmetricKey);
         PublicKey serverPublic = null;
         try {
@@ -68,8 +69,8 @@ public class ClientComms {
         String encryptedAESKey = RSASecurity.encryptSecretKey(encodedSymmetricKey, serverPublic);
 
         String type = "verify_auth";
-        String encrypted_username = SymmetricKey.encrypt(username, encodedSymmetricKey);
-        String encrypted_hash_password = SymmetricKey.encrypt(hashed_password, encodedSymmetricKey);
+        String encrypted_username = SymmetricKeyEncryption.encrypt(username, encodedSymmetricKey);
+        String encrypted_hash_password = SymmetricKeyEncryption.encrypt(hashed_password, encodedSymmetricKey);
         ;
 
         Gson gson = new Gson();
@@ -86,7 +87,7 @@ public class ClientComms {
             System.out.println("Error: NullPointerException: " + e.getMessage());
         }
 
-        sessionToken.setToken(SymmetricKey.decrypt(encrypted_session_token, encodedSymmetricKey));
+        sessionToken.setToken(SymmetricKeyEncryption.decrypt(encrypted_session_token, encodedSymmetricKey));
 
         Map<String, Object> values = new HashMap<>();
         values.put("sessionToken", sessionToken);
@@ -94,26 +95,24 @@ public class ClientComms {
         return values;
     }
 
-    public String requestSensorcKey(SessionToken token, String encodedSymmetricKey) {
+    public String requestSensorKey(String username, SessionToken token) {
         Gson gson = new Gson();
         String type = "verify_auth";
         String session_token = token.getToken();
 
-        String encrypted_session_token = SymmetricKey.encrypt(session_token, encodedSymmetricKey);
-
-        SensorKeyReq req = new SensorKeyReq(type, encrypted_session_token);
+        SensorKeyRequest req = new SensorKeyRequest(type, username, session_token);
         String json_req = gson.toJson(req);
 
         SensorKeyResponse response = gson.fromJson(connect_to_backoffice(json_req, "POST", "/sensors"), SensorKeyResponse.class);
 
-        String encrypted_sensor_key = null;
+        String sensorKey = null;
         try {
-            encrypted_sensor_key = response.getSymmetricKey();
+            sensorKey = response.getSymmetricKey();
         } catch (NullPointerException e) {
             System.out.println("Error: NullPointerException: " + e.getMessage());
         }
 
-        return SymmetricKey.decrypt(encrypted_sensor_key, encodedSymmetricKey);
+        return sensorKey;
     }
 
 }

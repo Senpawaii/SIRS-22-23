@@ -10,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-public class SymmetricKey {
+public class SymmetricKeyEncryption {
     public static String encrypt(String data, String aesKeyString) {
         byte[] decodedKey = Base64.getDecoder().decode(aesKeyString);
         SecretKey originalKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
@@ -58,7 +58,7 @@ public class SymmetricKey {
         return unencrypted_data;
     }
 
-    private SecretKey createAESKey() {
+    public SecretKey createAESKey() {
         SecureRandom secureRandom = new SecureRandom();
 
         KeyGenerator keyGenerator = null;

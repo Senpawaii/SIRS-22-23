@@ -12,7 +12,6 @@ public class BackMain {
     public static void main(String[] args) {
 //        GenerateJKS jks = new GenerateJKS(); // Generate JKS keystore
 
-        SessionManager manager = new SessionManager();
         int port = -1;
         String ksFile = "";
 
@@ -38,7 +37,8 @@ public class BackMain {
             System.out.println("Starting server on port " + port + "...");
             HttpsServer server = backoffice.createTLSServer(port);
             server.createContext("/test", new PingHandler());
-            server.createContext("/auth", new AuthenticateHandler(manager));
+            server.createContext("/auth", new AuthenticateHandler(backoffice.getManager()));
+            server.createContext("/sensors", new BackHandlers.SensorKeyHandler(backoffice.getSensorKey(), backoffice.getManager()));
             server.setExecutor(null);
             System.out.println("Server started on port " + port + "!");
             server.start();

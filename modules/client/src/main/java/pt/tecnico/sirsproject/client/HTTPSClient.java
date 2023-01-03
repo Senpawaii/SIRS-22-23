@@ -30,7 +30,7 @@ public class HTTPSClient {
 
     private void initSSLContext() throws NoSuchAlgorithmException, KeyManagementException {
         // Create a TrustManager that trusts the server's certificate
-        TrustManager[] trustAllCerts = new TrustManager[] {
+        TrustManager[] trustServerCert = new TrustManager[] {
                 new X509TrustManager() {
                     public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
                         // Trust all clients
@@ -48,7 +48,7 @@ public class HTTPSClient {
 
         // Initialize the SSL context with the trust manager
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, trustAllCerts, new SecureRandom());
+        sslContext.init(null, trustServerCert, new SecureRandom());
 
         // Create an SSL socket factory using the SSL context
         sslSocketFactory = sslContext.getSocketFactory();

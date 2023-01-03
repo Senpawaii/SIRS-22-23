@@ -1,4 +1,4 @@
-package pt.tecnico.sirsproject.client;
+package pt.tecnico.sirsproject.security;
 
 public class SensorKeyResponse {
     public String getSymmetricKey() {
