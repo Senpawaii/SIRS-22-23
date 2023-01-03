@@ -138,7 +138,7 @@ public class BackHandlers {
         }
     }
 
-    /* Add the other possible handlers the FrontOffice might have here */
+    /* Add the other possible handlers the BackOffice might have here */
 
 
     public static void sendResponse(HttpsExchange x, int statusCode, String responseBody) throws IOException {
