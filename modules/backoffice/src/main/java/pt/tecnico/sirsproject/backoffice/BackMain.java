@@ -1,27 +1,10 @@
 package pt.tecnico.sirsproject.backoffice;
 
 import com.sun.net.httpserver.HttpsServer;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsConfigurator;
-
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLContext;
-
-import pt.tecnico.sirsproject.backoffice.BackHandlers.PingHandler;
 import pt.tecnico.sirsproject.backoffice.BackHandlers.AuthenticateHandler;
+import pt.tecnico.sirsproject.backoffice.BackHandlers.PingHandler;
 
-import java.io.*;
-import java.net.InetSocketAddress;
+import java.io.File;
 
 public class BackMain {
     static BackOffice backoffice;

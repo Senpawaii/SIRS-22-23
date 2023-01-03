@@ -1,17 +1,24 @@
 package pt.tecnico.sirsproject.client;
 
 import javax.crypto.SecretKey;
+import java.util.Map;
 
 public class ClientMain {
     public static void main(String[] args) {
         ClientComms comms = new ClientComms();
-        SecretKey sharedKey;
+
+        SessionToken sessiontoken;
+        String symmetric_key_backoffice;
+        String sharedKey_sensors;
+
         GUI.printPrompt();
         while(true) {
             String[] user_pass_hash = GUI.authenticationPrompt();
 
-            SessionToken token = comms.verify_credentials(user_pass_hash[0], user_pass_hash[1]);
-            if(token != null) {
+            Map<String, Object> values = comms.verify_credentials(user_pass_hash[0], user_pass_hash[1]);
+            sessiontoken = (SessionToken) values.get("sessionToken");
+            symmetric_key_backoffice = (String) values.get("symmetricKey");
+             if(sessiontoken != null) {
                 Client client = new Client(user_pass_hash[0], user_pass_hash[1]);
 
                 selectionMenu:
@@ -20,7 +27,7 @@ public class ClientMain {
                     switch (action) {
                         case "A1": // Ask for symmetric key to use with Sensors/ Actuators
                             try{
-                                sharedKey = comms.requestSymmetricKey(token);
+                                sharedKey_sensors = comms.requestSensorcKey(sessiontoken, symmetric_key_backoffice);
                             } catch (Exception e) {
                                 System.out.println("Session token invalid/ expired. Please authenticate again");
                                 break selectionMenu;

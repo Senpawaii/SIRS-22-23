@@ -10,6 +10,8 @@ import java.io.*;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 public class ClientComms {
@@ -51,7 +53,7 @@ public class ClientComms {
         return response;
     }
 
-    public SessionToken verify_credentials(String username, String hashed_password) {
+    public Map<String, Object> verify_credentials(String username, String hashed_password) {
         File publicKeyFile = new File("../../extra_files/backoffice/public.key");
 
         String encodedSymmetricKey = new SymmetricKey().getEncodedSymmetricKey();
@@ -86,11 +88,32 @@ public class ClientComms {
 
         sessionToken.setToken(SymmetricKey.decrypt(encrypted_session_token, encodedSymmetricKey));
 
-        return sessionToken;
+        Map<String, Object> values = new HashMap<>();
+        values.put("sessionToken", sessionToken);
+        values.put("symmetricKey", encodedSymmetricKey);
+        return values;
     }
 
-    public SecretKey requestSymmetricKey(SessionToken token) {
-    return null;
+    public String requestSensorcKey(SessionToken token, String encodedSymmetricKey) {
+        Gson gson = new Gson();
+        String type = "verify_auth";
+        String session_token = token.getToken();
+
+        String encrypted_session_token = SymmetricKey.encrypt(session_token, encodedSymmetricKey);
+
+        SensorKeyReq req = new SensorKeyReq(type, encrypted_session_token);
+        String json_req = gson.toJson(req);
+
+        SensorKeyResponse response = gson.fromJson(connect_to_backoffice(json_req, "POST", "/sensors"), SensorKeyResponse.class);
+
+        String encrypted_sensor_key = null;
+        try {
+            encrypted_sensor_key = response.getSymmetricKey();
+        } catch (NullPointerException e) {
+            System.out.println("Error: NullPointerException: " + e.getMessage());
+        }
+
+        return SymmetricKey.decrypt(encrypted_sensor_key, encodedSymmetricKey);
     }
 
 }

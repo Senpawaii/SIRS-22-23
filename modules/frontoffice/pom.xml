@@ -82,9 +82,6 @@
 				</executions>
 				<configuration>
 					<mainClass>${mainclass}</mainClass>
-                    <sources>
-                        <source>>pt.tecnico.sirsproject.frontoffice</source>
-                    </sources>
 					<arguments>
 					</arguments>
 				</configuration>
