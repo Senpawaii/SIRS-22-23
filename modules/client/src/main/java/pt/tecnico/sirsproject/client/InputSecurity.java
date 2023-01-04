@@ -1,8 +1,5 @@
 package pt.tecnico.sirsproject.client;
 
-import com.google.common.hash.Hashing;
-
-import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -20,9 +17,9 @@ public class InputSecurity {
         }
     }
 
-    static String getHashPassword(Scanner sc) {
+    static String getPassword(Scanner sc) {
         System.out.print("Password: ");
-        String passwordString = sc.nextLine();
-        return Hashing.sha256().hashString(passwordString, StandardCharsets.UTF_8).toString();
+        return sc.nextLine();
+//        return Hashing.sha256().hashString(passwordString, StandardCharsets.UTF_8).toString();
     }
 }

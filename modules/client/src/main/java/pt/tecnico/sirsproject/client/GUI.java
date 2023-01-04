@@ -15,8 +15,8 @@ public class GUI {
     public static String[] authenticationPrompt() {
         System.out.println("Please authenticate yourself: ");
         String username = InputSecurity.getUsername(sc);
-        String hashedPassword = InputSecurity.getHashPassword(sc);
-        return new String[] {username, hashedPassword};
+        String password = InputSecurity.getPassword(sc);
+        return new String[] {username, password};
     }
 
     public static String printSelectionMenu(String username) {

@@ -10,14 +10,14 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 public class RequestParsing {
-    public static AuthRequest parseAuthRequestToJSON(HttpsExchange exc) throws IOException {
+    public static CredentialsRequest parseCredentialsRequestToJSON(HttpsExchange exc) throws IOException {
         InputStreamReader isr = new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8);
         BufferedReader br = new BufferedReader(isr);
         String requestBody = removeQuotesAndUnescape(br.readLine());
 
         Gson gson = new Gson();
         try {
-            return gson.fromJson(requestBody, AuthRequest.class);
+            return gson.fromJson(requestBody, CredentialsRequest.class);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
