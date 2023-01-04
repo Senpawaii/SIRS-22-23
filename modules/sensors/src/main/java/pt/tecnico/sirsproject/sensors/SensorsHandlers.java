@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Random;
 import java.util.Base64.Decoder;
 
 import com.google.gson.Gson;
@@ -75,54 +76,58 @@ public class SensorsHandlers {
         public void handle(HttpExchange x) throws IOException {
 
             HttpsExchange sx = (HttpsExchange) x;
-            // String requestMethod = sx.getRequestMethod();
-            // if (!requestMethod.equals("POST")) {
-            //     //ERROR case
-            //     sx.sendResponseHeaders(405, -1);
-            //     sx.getRequestBody().close();
-            // }
+            String requestMethod = sx.getRequestMethod();
+            if (!requestMethod.equals("POST")) {
+                //ERROR case
+                sx.sendResponseHeaders(405, -1);
+                sx.getRequestBody().close();
+            }
 
-            // UpdateSensorsKeyRequest req = null;
-            // try {
-            //     req = RequestParsing.parseUpdateSensorsKeyRequestToJSON(sx);
-            // } catch (IOException e) {
-            //     e.printStackTrace();
-            //     sx.sendResponseHeaders(400, -1);
-            //     sx.getResponseBody().close();
-            // }
+            UpdateSensorsKeyRequest req = null;
+            try {
+                req = RequestParsing.parseUpdateSensorsKeyRequestToJSON(sx);
+            } catch (IOException e) {
+                e.printStackTrace();
+                sx.sendResponseHeaders(400, -1);
+                sx.getResponseBody().close();
+            }
+
+            int p = Integer.parseInt(req.getP_prime());
+            int g = Integer.parseInt(req.getG_root());
+            double bigA = Double.parseDouble(req.getBigA());
+
+            int b_secret = new Random().nextInt();
+            double bigB = ((Math.pow(g, b_secret)) % p);
+            String bigB_str = String.valueOf(bigB);
+
+            double newSecret = ((Math.pow(bigA, b_secret)) % p);
+            String newKey = Base64.getEncoder().encodeToString(String.valueOf(newSecret).getBytes());
+            sensors.updateCurrentKey(newKey);
+
+            UpdateSensorsKeyResponse response = new UpdateSensorsKeyResponse(bigB_str);
+            Gson gson = new Gson();
+            String response_json = gson.toJson(response);
+            sendResponse(sx, 200, response_json);
 
             // String newKey = req.getNew_key();
 
-            UpdateSensorsKeyRequest dummy = new UpdateSensorsKeyRequest("aCmsgqY9ixy+0IQSpgBhW3ZA1cdVOGlUV2UahF6Wc1g=");
-            Gson gson = new Gson();
-            String json_dummy = gson.toJson(dummy);
-            // System.out.println(json_dummy);
+            // UpdateSensorsKeyRequest dummy = new UpdateSensorsKeyRequest("aCmsgqY9ixy+0IQSpgBhW3ZA1cdVOGlUV2UahF6Wc1g=");
+            // Gson gson = new Gson();
+            // String json_dummy = gson.toJson(dummy);
+            // // System.out.println(json_dummy);
 
-            // String clean = StringEscapeUtils.escapeJava(json_dummy.replaceAll("^\"|\"$", ""));
-            UpdateSensorsKeyRequest req = gson.fromJson(json_dummy, UpdateSensorsKeyRequest.class);
-            String newKey = req.getNew_key();
+            // String clean = StringEscapeUtils.unescapeJava(json_dummy.replaceAll("^\"|\"$", ""));
+            // UpdateSensorsKeyRequest req = gson.fromJson(clean, UpdateSensorsKeyRequest.class);
+            // String newKey = req.getNew_key();
 
-            if (newKey == null) {
-                // bad message, send 400
-                sx.sendResponseHeaders(400, -1);
-                sx.getResponseBody().close();
-            } else {
-                // received new key, update
-                sensors.updateCurrentKey(newKey);
-                sendResponse(sx, 200, sensors.getEncodedCurrentKey());
-            }
-
-            // if (newKey_dec == null) {
-            //     // something went wrong with the decryption, send error
-            //     sx.sendResponseHeaders(500, -1);
+            // if (newKey == null) {
+            //     // bad message, send 400
+            //     sx.sendResponseHeaders(400, -1);
             //     sx.getResponseBody().close();
-            // }
-            // else {
-            //     // success
-            //     sensors.updateCurrentKey(newKey_dec);
-            //     // sx.sendResponseHeaders(200, -1);
-            //     // sx.getResponseBody().close();
-            //     sendResponse(sx, 200, newKey_dec);
+            // } else {
+            //     // received new key, update
+            //     sensors.updateCurrentKey(newKey);
+            //     sendResponse(sx, 200, sensors.getEncodedCurrentKey());
             // }
         }
     }
