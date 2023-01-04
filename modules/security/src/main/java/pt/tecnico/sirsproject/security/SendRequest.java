@@ -26,20 +26,7 @@ public class SendRequest {
             throw new MalformedURLException();
         }
 
-        SSLContext sslContext;
-        try {
-            sslContext = SSLContext.getInstance("TLS");
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("Error: TLS is not available in this environment. " + e.getMessage());
-            throw new NoSuchAlgorithmException();
-        }
-
-        try {
-            sslContext.init(null, trustManagers, null);
-        } catch (KeyManagementException e) {
-            System.out.println("Error: Couldn't initialize SSL context. " + e.getMessage());
-            throw new KeyManagementException();
-        }
+        SSLContext sslContext = TLS_SSL.createSSLContext(trustManagers, null); // TODO: KeyManager should be initialized anyways
 
         HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
         con.setSSLSocketFactory(sslContext.getSocketFactory());

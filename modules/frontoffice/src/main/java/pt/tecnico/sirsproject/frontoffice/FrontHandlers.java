@@ -20,7 +20,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.google.gson.Gson;
-import pt.tecnico.sirsproject.security.SymmetricKey;
+//import pt.tecnico.sirsproject.security.SymmetricKey;
 
 
 public class FrontHandlers {
