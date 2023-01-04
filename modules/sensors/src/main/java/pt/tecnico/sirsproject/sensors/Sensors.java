@@ -35,7 +35,7 @@ public class Sensors {
     private KeyManagerFactory keyManager;
     private TrustManagerFactory trustManager;
 
-    private RSAService rsaService;
+//    private RSAService rsaService;
 
     public Sensors(String keystorePath) {
         loadProperties();

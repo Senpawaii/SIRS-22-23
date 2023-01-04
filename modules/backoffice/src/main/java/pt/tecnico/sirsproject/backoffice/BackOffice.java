@@ -3,11 +3,12 @@ package pt.tecnico.sirsproject.backoffice;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
+import pt.tecnico.sirsproject.security.RSAUtils;
 import pt.tecnico.sirsproject.security.SensorKey;
 import pt.tecnico.sirsproject.security.SymmetricKeyEncryption;
+import pt.tecnico.sirsproject.security.TLS_SSL;
 
 import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -15,22 +16,42 @@ import java.net.InetSocketAddress;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Properties;
 
 public class BackOffice {
-    private static KeyStore keystore;
+    private KeyStore keystore;
     private Properties properties;
-    private KeyManagerFactory keyManager;
-    private TrustManagerFactory trustManager;
+    private TrustManager[] trustManagers;
+    private KeyManager[] keyManagers;
     private SensorKey sensorKey;
-    private SessionManager manager = new SessionManager();
+    private final SessionManager manager = new SessionManager();
 
 
     public BackOffice(String keystorePath) {
         loadProperties();
         loadKeyStore(keystorePath);
-        initializeKeyAndTrustManager();
+        setTrustManagers();
+        setKeyManagers();
         createSensorKey();
+        createDatabaseConnection();
+    }
+
+    private void setTrustManagers() {
+        HashMap<String, String> certificate_paths = new HashMap<>();
+        // Insert here all the necessary certificates for the Client
+        certificate_paths.put("Client_certificate", "../../extra_files/backoffice/outside_certificates/ClientCertificate.pem");
+        certificate_paths.put("Sensors_certificate", "../../extra_files/backoffice/outside_certificates/SensorsCertificate.pem");
+
+        KeyStore keystoreCertificates = RSAUtils.loadKeyStoreCertificates(certificate_paths);
+        this.trustManagers = RSAUtils.loadTrustManagers(keystoreCertificates);
+    }
+
+    private void setKeyManagers() {
+        String keystore_password = properties.getProperty("keystore_pass");
+        char[] pass = keystore_password.toCharArray();
+
+        this.keyManagers = RSAUtils.loadKeyManagers(this.keystore, pass);
     }
 
     private void createSensorKey() {
@@ -60,6 +81,10 @@ public class BackOffice {
         }
     }
 
+    private void createDatabaseConnection() {
+
+    }
+
     HttpsServer createTLSServer(int port)
             throws TLSServerException {
 
@@ -73,24 +98,16 @@ public class BackOffice {
             throw new TLSServerException("Error: Couldn't create server on requested port " + port + ".", e);
         }
 
-        // Initialize the SSL context
-        SSLContext context;
+        SSLContext sslContext = null;
         try {
-            context = SSLContext.getInstance("TLS");
-        } catch (NoSuchAlgorithmException e) {
-            throw new TLSServerException("Error: Couldn't find requested SSL Context algorithm.", e);
-        }
-
-
-        // Initialize the SSL context with the key and trust managers
-        try {
-            context.init(keyManager.getKeyManagers(), trustManager.getTrustManagers(), null);
-        } catch (KeyManagementException e) {
-            throw new TLSServerException("Error: Unable to initialize SSL context.", e);
+            sslContext = TLS_SSL.createSSLContext(trustManagers, keyManagers);
+        } catch(NoSuchAlgorithmException | KeyManagementException e) {
+            System.out.println("Error: Couldn't create SSL context. " + e.getMessage());
+            System.exit(1);
         }
 
         // Set the SSL context for the backoffice server
-        server.setHttpsConfigurator(new HttpsConfigurator(context) {
+        server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
             public void configure(HttpsParameters params) {
                 try {
                     SSLContext sslcontext = SSLContext.getDefault();
@@ -100,8 +117,8 @@ public class BackOffice {
                     params.setProtocols(engine.getEnabledProtocols());
 
                     // set SSL parameters
-                    SSLParameters sslparams = sslcontext.getDefaultSSLParameters();
-                    params.setSSLParameters(sslparams);
+                    SSLParameters sslparameters = sslcontext.getDefaultSSLParameters();
+                    params.setSSLParameters(sslparameters);
                     System.out.println("Server connected on port " + port + ".");
                 } catch (NoSuchAlgorithmException e) {
                     e.printStackTrace();
@@ -110,21 +127,6 @@ public class BackOffice {
             }
         });
         return server;
-    }
-
-    private void initializeKeyAndTrustManager() {
-        String password = properties.getProperty("keystore_pass");
-        char[] pass = password.toCharArray();
-
-        // Initialize the key and trust manager factories
-        try {
-            keyManager = KeyManagerFactory.getInstance("SunX509");
-            trustManager = TrustManagerFactory.getInstance("SunX509");
-            keyManager.init(keystore, pass);
-            trustManager.init(keystore);
-        } catch (NoSuchAlgorithmException | KeyStoreException | UnrecoverableKeyException e) {
-            System.out.println("Error: Couldn't initialize key or trust manager factory " + e.getMessage());
-        }
     }
 
     byte[] decryptWithRSA(byte[] request) {

@@ -3,13 +3,12 @@ package pt.tecnico.sirsproject.security;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
-import java.security.KeyFactory;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -84,6 +83,22 @@ public class RSAUtils {
             System.out.println("Error: Couldn't initialize TrustManagerFactory. " + e.getMessage());
         }
         return trustManagerFactory.getTrustManagers();
+    }
+
+    public static KeyManager[] loadKeyManagers(KeyStore keystoreKeys, char[] keystorePass) {
+        KeyManagerFactory keyManagerFactory = null;
+        try {
+            keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("Error: Couldn't initialize key or trust manager factory " + e.getMessage());
+            System.exit(1);
+        }
+        try {
+            keyManagerFactory.init(keystoreKeys, keystorePass);
+        } catch (NoSuchAlgorithmException | UnrecoverableKeyException | KeyStoreException e) {
+            System.out.println("Error: Couldn't initialize KeyManagerFactory. " + e.getMessage());
+        }
+        return keyManagerFactory.getKeyManagers();
     }
 
     public static RSAPublicKey loadPublicKey(File file) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {

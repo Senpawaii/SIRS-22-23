@@ -33,7 +33,7 @@ public class Client {
     }
 
     private void loadPublicKeys() {
-        File backoffice_publicFile = new File("../../extra_files/client/BackOfficePublicKey.pem");
+        File backoffice_publicFile = new File("../../extra_files/client/outside_publicKeys/BackOfficePublicKey.pem");
         try {
             this.backoffice_publicK = RSAUtils.loadPublicKey(backoffice_publicFile);
             System.out.println("Server public key:" + Base64.getEncoder().encodeToString(this.backoffice_publicK.getEncoded()));
@@ -55,7 +55,8 @@ public class Client {
     private void setTrustManagers() {
         HashMap<String, String> certificate_paths = new HashMap<>();
         // Insert here all the necessary certificates for the Client
-        certificate_paths.put("BackOffice_certificate", "../../extra_files/client/BackOfficeCertificate.pem");
+        certificate_paths.put("BackOffice_certificate", "../../extra_files/client/outside_certificates/BackOfficeCertificate.pem");
+        certificate_paths.put("Sensors_certificate", "../../extra_files/client/outside_certificates/SensorsCertificate.pem");
 
         KeyStore keystoreCertificates = RSAUtils.loadKeyStoreCertificates(certificate_paths);
         this.trustManagers = RSAUtils.loadTrustManagers(keystoreCertificates);
