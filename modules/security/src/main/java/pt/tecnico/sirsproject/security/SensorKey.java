@@ -1,11 +1,13 @@
 package pt.tecnico.sirsproject.security;
 
-import javax.crypto.SecretKey;
-
 public class SensorKey {
-    SecretKey symmetricKey;
+    String symmetricKey;
 
-    public SensorKey(SecretKey symmetricKey) {
+    public SensorKey(String symmetricKey) {
         this.symmetricKey = symmetricKey;
+    }
+
+    public String getSymmetricKey() {
+        return symmetricKey;
     }
 }

@@ -66,49 +66,37 @@ public class BackHandlers {
                 return;
             }
 
-            AuthRequest auth_request;
+            CredentialsRequest credentials_request;
             try {
-                auth_request = RequestParsing.parseAuthRequestToJSON(sx);
-            } catch(IOException exception) {
-                System.out.println(exception.getMessage());
+                credentials_request = RequestParsing.parseCredentialsRequestToJSON(sx);
+            } catch(IOException e) {
+                System.out.println("Error: Couldn't parse Credentials Request to JSON format. " + e.getMessage());
                 return;
             }
 
             // TODO: Add validation for .getString
-            byte[] encrypted_shared_key_b64 = auth_request.getEncrypted_shared_key().getBytes();
-            byte[] encrypted_shared_key = Base64.getDecoder().decode(encrypted_shared_key_b64);
-            byte[] shared_key_b64 = BackMain.backoffice.decryptWithRSA(encrypted_shared_key);
-            byte[] shared_key = Base64.getDecoder().decode(shared_key_b64);
-
-            String encrypted_username_b64 = auth_request.getEncrypted_username();
-            byte[] encrypted_username = Base64.getDecoder().decode(encrypted_username_b64.getBytes());
-
-            String encrypted_hash_password_b64 = auth_request.getEncrypted_hash_password();
-            byte[] encrypted_hash_password = Base64.getDecoder().decode(encrypted_hash_password_b64.getBytes());
-
-            String username = BackMain.backoffice.decryptWithSymmetric(Base64.getEncoder().encodeToString(encrypted_username), shared_key);
-            String hash_password = BackMain.backoffice.decryptWithSymmetric(Base64.getEncoder().encodeToString(encrypted_hash_password), shared_key);
-
+            assert credentials_request != null;
+            String username = credentials_request.getUsername();
+            String password = credentials_request.getPassword();
             // TODO: Sanitize Strings
 
-            if(validate_credentials(username, hash_password)) {
+            JSONObject response = new JSONObject();
+            if(validate_credentials(username, password)) {
+
                 // If the client already has a valid token, delete the current and generate a new one.
                 if(this.manager.hashActiveSession(username)){
+                    System.out.println("User: " + username + " already has an active session.");
                     this.manager.deleteSession(username);
                 }
                 String token = this.manager.createSession(username);
 
-                // Encrypt the token with the shared symmetric key
-                String encrypted_token = SymmetricKeyEncryption.encrypt(token, Base64.getEncoder().encodeToString(shared_key));
-
-                JSONObject response = new JSONObject();
-                response.put("encrypted_token", encrypted_token);
+                response.put("token", token);
                 System.out.println("Auth Request:" + username + " token: " + token);
                 sendResponse(sx, 200, response.toString());
             } else {
-                sendResponse(sx, 401, "Invalid credentials.");
+                response.put("token", "Null");
+                sendResponse(sx, 200, response.toString());
             }
-
         }
 
         private static boolean validate_credentials(String username, String hash_password) {
@@ -144,12 +132,13 @@ public class BackHandlers {
             }
 
             // Verify session token
+            assert sensorKey_request != null;
             String sessionToken = sensorKey_request.getSession_token();
             String username = sensorKey_request.getUsername();
 
             if(validate_session(username, sessionToken, manager)) {
                 JSONObject response = new JSONObject();
-                response.put("symmetricKey", this.sensorKey);
+                response.put("symmetricKey", this.sensorKey.getSymmetricKey());
                 System.out.println("SensorKey Request:" + username + " sensorKey: " + sensorKey);
                 sendResponse(sx, 200, response.toString());
             } else {

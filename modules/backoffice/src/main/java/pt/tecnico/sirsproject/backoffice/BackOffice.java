@@ -34,8 +34,7 @@ public class BackOffice {
     }
 
     private void createSensorKey() {
-        SecretKey aeskey = new SymmetricKeyEncryption().createAESKey();
-        this.sensorKey = new SensorKey(aeskey);
+        this.sensorKey = new SensorKey("DUMMY");
     }
 
     private void loadProperties() {

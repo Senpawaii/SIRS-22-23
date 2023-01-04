@@ -2,78 +2,43 @@ package pt.tecnico.sirsproject.security;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.*;
+import javax.net.ssl.TrustManager;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 
 public class SendRequest {
-    public static String sendRequest(String address, String port, String json_req, String type_req, String handler, File crtFile) throws IOException {
+    public static String sendRequest(String address, String port, String json_req, String type_req, String handler,
+                                     TrustManager[] trustManagers)
+            throws IOException, NoSuchAlgorithmException, KeyManagementException {
         String https_URL = "https://" + address + ":" + port + handler;
-        URL url = null;
+        URL url;
         try {
             url = new URL(https_URL);
         } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        assert url != null;
-
-        Certificate certificate = null;
-        try {
-            certificate = CertificateFactory.getInstance("X.509").generateCertificate(new FileInputStream(crtFile));
-        } catch (CertificateException e) {
-            e.printStackTrace();
+            System.out.println("Error: Malformed URL. " + e.getMessage());
+            throw new MalformedURLException();
         }
 
-        KeyStore keyStore = null;
-        try {
-            keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        }
-        try {
-            keyStore.load(null, null);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        }
-        try {
-            keyStore.setCertificateEntry("server", certificate);
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        }
-
-        TrustManagerFactory trustManagerFactory = null;
-        try {
-            trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        try {
-            trustManagerFactory.init(keyStore);
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        }
-
-        SSLContext sslContext = null;
+        SSLContext sslContext;
         try {
             sslContext = SSLContext.getInstance("TLS");
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            System.out.println("Error: TLS is not available in this environment. " + e.getMessage());
+            throw new NoSuchAlgorithmException();
         }
+
         try {
-            sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
+            sslContext.init(null, trustManagers, null);
         } catch (KeyManagementException e) {
-            e.printStackTrace();
+            System.out.println("Error: Couldn't initialize SSL context. " + e.getMessage());
+            throw new KeyManagementException();
         }
 
         HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
@@ -82,37 +47,29 @@ public class SendRequest {
         try {
             con.setRequestMethod(type_req);
         } catch (ProtocolException e) {
-            e.printStackTrace();
+            System.out.println("Error: TCP error. " + e.getMessage());
+            throw new ProtocolException();
         }
+
         con.setRequestProperty("Content-length", String.valueOf(json_req.length()));
         con.setRequestProperty("Content-Type","application/json");
         con.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/46.0.2490.80");
 
         // Send the request body
         con.setDoOutput(true);
-        OutputStream os = null;
+        OutputStream os;
         try {
             os = con.getOutputStream();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (os != null) {
-            try {
+            if (os != null) {
                 os.write(json_req.getBytes());
-            } catch (IOException e) {
-                e.printStackTrace();
+                os.flush();
+                os.close();
+            } else {
+                System.out.println("Error: Couldn't read the response.");
             }
-        }
-        assert os != null;
-        try {
-            os.flush();
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            os.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Error: I/O error. " + e.getMessage());
+            throw new IOException();
         }
 
         // Read the response
