@@ -24,7 +24,7 @@ public class RequestParsing {
         return null;
     }
 
-     public static SensorKeyRequest parseSensorKeyRequestToJSON(HttpsExchange exc) throws IOException {
+    public static SensorKeyRequest parseSensorKeyRequestToJSON(HttpsExchange exc) throws IOException {
         InputStreamReader isr = new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8);
         BufferedReader br = new BufferedReader(isr);
         String requestBody = removeQuotesAndUnescape(br.readLine());
@@ -32,6 +32,20 @@ public class RequestParsing {
         Gson gson = new Gson();
         try {
             return gson.fromJson(requestBody, SensorKeyRequest.class);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public static UpdateSensorsKeyRequest parseUpdateSensorsKeyRequestToJSON(HttpsExchange exc) throws IOException {
+        InputStreamReader isr = new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8);
+        BufferedReader br = new BufferedReader(isr);
+        String requestBody = removeQuotesAndUnescape(br.readLine());
+
+        Gson gson = new Gson();
+        try {
+            return gson.fromJson(requestBody, UpdateSensorsKeyRequest.class);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }

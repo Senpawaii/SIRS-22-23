@@ -14,6 +14,8 @@ import java.util.Base64.Decoder;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
 
+import pt.tecnico.sirsproject.security.*;
+
 import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -91,8 +93,19 @@ public class SensorsHandlers {
             // String newKey_dec = sensors.decryptRSA(newKey_enc);
 
             // Simulate receiving a key for testing
-            String newKey = Base64.getEncoder().encodeToString(sensors.createAESKey().getEncoded());
-            System.out.println("==> Received new key (encoded): " + newKey);
+            // String newKey = Base64.getEncoder().encodeToString(sensors.createAESKey().getEncoded());
+            // System.out.println("==> Received new key (encoded): " + newKey);
+
+            UpdateSensorsKeyRequest req = null;
+            try {
+                req = RequestParsing.parseUpdateSensorsKeyRequestToJSON(sx);
+            } catch (IOException e) {
+                e.printStackTrace();
+                sx.sendResponseHeaders(400, -1);
+                sx.getResponseBody().close();
+            }
+
+            String newKey = req.getNew_key();
 
             if (newKey == null) {
                 // bad message, send 400
