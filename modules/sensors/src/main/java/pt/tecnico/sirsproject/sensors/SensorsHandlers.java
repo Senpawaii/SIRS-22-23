@@ -11,8 +11,11 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 
+import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
+
+import pt.tecnico.sirsproject.security.*;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
@@ -79,20 +82,25 @@ public class SensorsHandlers {
             //     sx.getRequestBody().close();
             // }
 
-            // BufferedReader reader = new BufferedReader(new InputStreamReader(sx.getRequestBody(), StandardCharsets.UTF_8));
-            // String requestString = reader.readLine();
-            
-            // JSONObject request = new JSONObject(requestString);
-            
-            // String newKey = sensors.decryptRSA(request.getString("newKey")); // will be replaced with rsa util class
+            // UpdateSensorsKeyRequest req = null;
+            // try {
+            //     req = RequestParsing.parseUpdateSensorsKeyRequestToJSON(sx);
+            // } catch (IOException e) {
+            //     e.printStackTrace();
+            //     sx.sendResponseHeaders(400, -1);
+            //     sx.getResponseBody().close();
+            // }
 
-            // Simulate receiving an encrypted key for testing
-            // String newKey_enc = sensors.encryptRSA();
-            // String newKey_dec = sensors.decryptRSA(newKey_enc);
+            // String newKey = req.getNew_key();
 
-            // Simulate receiving a key for testing
-            String newKey = Base64.getEncoder().encodeToString(sensors.createAESKey().getEncoded());
-            System.out.println("==> Received new key (encoded): " + newKey);
+            UpdateSensorsKeyRequest dummy = new UpdateSensorsKeyRequest("aCmsgqY9ixy+0IQSpgBhW3ZA1cdVOGlUV2UahF6Wc1g=");
+            Gson gson = new Gson();
+            String json_dummy = gson.toJson(dummy);
+            // System.out.println(json_dummy);
+
+            // String clean = StringEscapeUtils.escapeJava(json_dummy.replaceAll("^\"|\"$", ""));
+            UpdateSensorsKeyRequest req = gson.fromJson(json_dummy, UpdateSensorsKeyRequest.class);
+            String newKey = req.getNew_key();
 
             if (newKey == null) {
                 // bad message, send 400
