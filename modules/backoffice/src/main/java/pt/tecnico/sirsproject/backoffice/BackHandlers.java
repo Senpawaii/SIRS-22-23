@@ -110,11 +110,14 @@ public class BackHandlers {
         // private final SensorKey sensorKey;
         private final SessionManager manager;
         private BackOffice backoffice;
-        public SensorKeyHandler(/*SensorKey key, SessionManager manager*/ BackOffice backoffice) {
+        private final AccessControlManager accessControlManager;
+        private final Integer SENSOR_CLEARANCE = 2;
+        public SensorKeyHandler(/*SensorKey key, SessionManager manager*/ BackOffice backoffice, AccessControlManager accessControlManager) {
             // this.sensorKey = key;
             // this.manager = manager;
             this.backoffice = backoffice;
             this.manager = backoffice.getManager();
+            this.accessControlManager = accessControlManager;
         }
 
         @Override
@@ -139,19 +142,25 @@ public class BackHandlers {
             String sessionToken = sensorKey_request.getSession_token();
             String username = sensorKey_request.getUsername();
 
+            JSONObject response = new JSONObject();
             if(validate_session(username, sessionToken, manager)) {
-                JSONObject response = new JSONObject();
-                response.put("symmetricKey", /*this.sensorKey.getSymmetricKey()*/this.backoffice.getSensorKey().getSymmetricKey());
-                System.out.println("SensorKey Request:" + username + " sensorKey: " + /*sensorKey*/this.backoffice.getSensorKey());
-                sendResponse(sx, 200, response.toString());
-            } else {
-                sendResponse(sx, 401, "Invalid credentials.");
-            }
-
-
-                if(this.manager.hashActiveSession(username)){
-
+                if(accessControlManager.hasAccess(username, SENSOR_CLEARANCE)) {
+                    response.put("symmetricKey", this.backoffice.getSensorKey().getSymmetricKey());
+                    System.out.println("SensorKey Request:" + username + " sensorKey: " + this.backoffice.getSensorKey());
+                    sendResponse(sx, 200, response.toString());
+                } else {
+                    response.put("symmetricKey", "None");
+                    response.put("extra_message", "You do not have enough clearance to access this.");
+                    sendResponse(sx, 200, response.toString());
                 }
+            } else {
+                response.put("symmetricKey", "None");
+                response.put("extra_message", "Invalid credentials.");
+                sendResponse(sx, 200, response.toString());
+            }
+            if(this.manager.hashActiveSession(username)){
+
+            }
         }
     }
 
@@ -165,8 +174,9 @@ public class BackHandlers {
 
     private static boolean validate_session(String username, String sessionToken, SessionManager manager) {
         SessionToken token = manager.getSession(username);
-        if(token != null && sessionToken.equals(token.getToken()) && token.getDeadline().isAfter(Instant.now()))
-           return true;
-        return false;
+        // Check if the SessionToken received matches the session token issued for this User, and has not expired yet.
+        return token != null && sessionToken.equals(token.getToken()) && token.getDeadline().isAfter(Instant.now());
     }
+
+
 }

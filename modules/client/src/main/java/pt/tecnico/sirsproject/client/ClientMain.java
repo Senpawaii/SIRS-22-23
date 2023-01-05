@@ -5,6 +5,7 @@ public class ClientMain {
         Client client = new Client();
 
         GUI.printPrompt();
+
         while(true) {
             String[] user_pass = GUI.authenticationPrompt();
             client.setIdentity(user_pass[0], user_pass[1]);
@@ -18,11 +19,13 @@ public class ClientMain {
                             try{
                                 client.obtainSensorKey();
                             } catch (Exception e) {
-                                System.out.println("Session token invalid/ expired. Please authenticate again");
-                                break selectionMenu;
+                                System.out.println(e.getMessage());
+                                if(e.getMessage().equals("You do not have enough clearance to access this.")) {
+                                    break;
+                                } else {
+                                    break selectionMenu;
+                                }
                             }
-                            System.out.println("A1");
-                            break;
                         case "A2": // Query stock
                             System.out.println("A2");
                             break;
@@ -31,6 +34,12 @@ public class ClientMain {
                             break;
                         case "C1": // Contact Sensors
                             client.accessSensors();
+                            break;
+                        case "B1": // Request public information
+                            System.out.println("B1");
+                            break;
+                        case "B2": // Request private information
+                            System.out.println("B2");
                             break;
                         case "4":
                             System.out.println("Exiting...");

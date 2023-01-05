@@ -25,4 +25,8 @@ public class SessionManager {
     void deleteSession(String username) {
         sessions.remove(username);
     }
+
+    public SessionToken getSession(String username) {
+        return sessions.get(username);
+    }
 }

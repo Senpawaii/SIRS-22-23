@@ -11,7 +11,8 @@ public class SensorKeyResponse {
         return symmetricKey;
     }
 
-    public SensorKeyResponse(String symmetricKey) {
+    public SensorKeyResponse(String symmetricKey, String extra_message) {
         this.symmetricKey = symmetricKey;
+        this.extra_message = extra_message;
     }
 }

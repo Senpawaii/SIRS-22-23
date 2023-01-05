@@ -1,0 +1,21 @@
+# Initialize firewall
+sudo ufw enable
+
+# Check firewall status
+sudo ufw status verbose
+
+# Allow all TCP connections from VM2 (IPV4)
+sudo ufw allow in on enp0s3 from 192.168.0.10 to any port 27017/tcp
+
+# Allow all TCP connections from VM2 (IPV6)
+sudo ufw allow in on enp0s3 from fe80::a00:27ff:fe1d:2892 to any port 27017/tcp
+
+# Deny all other connections
+sudo gedit /etc/ufw/before.rules
+Change all ACCEPT to DROP except these lines:
+-A ufw-before-input -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A ufw-before-output -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A ufw-before-forward -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+# Reload firewall
+sudo ufw reload

@@ -5,7 +5,7 @@ entity=client
 entityName=Client
 
 echo "Generating JKS Keystore..."
-keytool -genkeypair -alias "$certCN" -keyalg RSA -keysize 2048 -keystore "$entity".jks -dname "cn=$certCN, ou=My Organization, o=My Organization, l=My City, s=My State, c=My Country" -storepass "$entity" -keypass "$entity" -ext san=IP:192.168.0.10
+keytool -genkeypair -alias "$certCN" -keyalg RSA -keysize 2048 -keystore "$entity".jks -dname "cn=$certCN, ou=My Organization, o=My Organization, l=My City, s=My State, c=My Country" -storepass "$entity" -keypass "$entity" -ext san=IP:192.168.1.50
 keytool -selfcert -alias "$certCN" -keystore "$entity".jks -storepass "$entity" -keypass "$entity" -validity 365
 
 echo "Extracting Private Key..."

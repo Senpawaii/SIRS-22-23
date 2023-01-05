@@ -1,4 +1,4 @@
-package pt.tecnico.sirsproject.backoffice;
+package pt.tecnico.sirsproject.frontoffice;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -37,13 +37,7 @@ public final class DatabaseCommunications {
         char[] password_array = password.toCharArray();
         String computed_password = getPasswordHexHash(password_array, salt);
 
-        if(computed_password.equals(hash_hex)) { //TODO: Simplify this after testing
-            System.out.println("The password matches for user: " + username);
-            return true;
-        } else {
-            System.out.println("The password does not match for user: " + username);
-            return false;
-        }
+        return computed_password.equals(hash_hex);
     }
 
     public static void populateDBUsers(String[] usernames, String[] passwords, MongoClient mongoClient) {
@@ -76,7 +70,7 @@ public final class DatabaseCommunications {
 
     private static void storeDocument(String username, String hash_hex, String salt_hex, MongoClient mongoClient) {
         MongoDatabase users_database = mongoClient.getDatabase("Users");
-        MongoCollection<Document> users_collection = users_database.getCollection("user_pass");
+        MongoCollection<Document> users_collection = users_database.getCollection("users_pass");
         Document user_pass = new Document("_id", new ObjectId());
         user_pass.append("user", username)
                  .append("hash",hash_hex)

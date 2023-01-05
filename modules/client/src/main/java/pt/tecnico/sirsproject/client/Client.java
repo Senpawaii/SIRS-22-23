@@ -22,6 +22,8 @@ public class Client {
     private final String backoffice_port;
     private final String sensors_address;
     private final String sensors_port;
+    private final String frontoffice_address;
+    private final String frontoffice_port;
     private String token;
     private TrustManager[] trustManagers;
     private SensorKey sensorKey;
@@ -32,6 +34,8 @@ public class Client {
         this.backoffice_port = properties.getProperty("backoffice_port");
         this.sensors_address = properties.getProperty("sensors_ip_address");
         this.sensors_port = properties.getProperty("sensors_port");
+        this.frontoffice_address = this.backoffice_address;
+        this.frontoffice_port = properties.getProperty("frontoffice_port");
         loadPublicKeys();
         setTrustManagers();
     }
@@ -60,6 +64,7 @@ public class Client {
         HashMap<String, String> certificate_paths = new HashMap<>();
         // Insert here all the necessary certificates for the Client
         certificate_paths.put("BackOffice_certificate", "../../extra_files/client/outside_certificates/BackofficeCertificate.pem");
+        certificate_paths.put("FrontOffice_certificate", "../../extra_files/client/outside_certificates/FrontofficeCertificate.pem");
         certificate_paths.put("Sensors_certificate", "../../extra_files/client/outside_certificates/SensorsCertificate.pem");
 
         KeyStore keystoreCertificates = RSAUtils.loadKeyStoreCertificates(certificate_paths);
@@ -79,7 +84,12 @@ public class Client {
 
         CredentialsResponse response = gson.fromJson(response_json, CredentialsResponse.class);
         if(response != null) {
-            setToken(response.getToken());
+            String token = response.getToken();
+            if(!token.equals("Null")) {
+                setToken(token);
+            } else {
+                return false;
+            }
             return true;
         }
         return false;
@@ -100,8 +110,9 @@ public class Client {
 
         String sensorKey = sensorResponse.getSymmetricKey();
 
-        if(sensorKey.equals("Null")) { // TODO: Validate that this is how the server tells the client that the token is invalid!
-            throw new Exception("Invalid token.");
+        if(sensorKey.equals("None")) {
+            String cause = sensorResponse.getExtra_message();
+            throw new Exception(cause);
         }
         this.sensorKey = new SensorKey(sensorKey);
     }
