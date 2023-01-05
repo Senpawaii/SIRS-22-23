@@ -20,6 +20,8 @@ public class Client {
     private PublicKey backoffice_publicK;
     private final String backoffice_address;
     private final String backoffice_port;
+    private final String frontoffice_address;
+    private final String frontoffice_port;
     private String token;
     private TrustManager[] trustManagers;
     private SensorKey sensorKey;
@@ -28,6 +30,8 @@ public class Client {
         loadPropertiesFile();
         this.backoffice_address = properties.getProperty("backoffice_ip_address");
         this.backoffice_port = properties.getProperty("backoffice_port");
+        this.frontoffice_address = this.backoffice_address;
+        this.frontoffice_port = properties.getProperty("frontoffice_port");
         loadPublicKeys();
         setTrustManagers();
     }
@@ -56,6 +60,7 @@ public class Client {
         HashMap<String, String> certificate_paths = new HashMap<>();
         // Insert here all the necessary certificates for the Client
         certificate_paths.put("BackOffice_certificate", "../../extra_files/client/outside_certificates/BackofficeCertificate.pem");
+        certificate_paths.put("FrontOffice_certificate", "../../extra_files/client/outside_certificates/FrontofficeCertificate.pem");
         certificate_paths.put("Sensors_certificate", "../../extra_files/client/outside_certificates/SensorsCertificate.pem");
 
         KeyStore keystoreCertificates = RSAUtils.loadKeyStoreCertificates(certificate_paths);

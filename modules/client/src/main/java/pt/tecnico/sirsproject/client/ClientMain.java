@@ -29,6 +29,12 @@ public class ClientMain {
                         case "A3": // Buy parts
                             System.out.println("A3");
                             break;
+                        case "B1": // Request public information
+                            System.out.println("B1");
+                            break;
+                        case "B2": // Request private information
+                            System.out.println("B2");
+                            break;
                         case "4":
                             System.out.println("Exiting...");
                             System.exit(0);
