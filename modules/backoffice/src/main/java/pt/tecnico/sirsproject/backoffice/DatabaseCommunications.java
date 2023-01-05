@@ -36,8 +36,14 @@ public final class DatabaseCommunications {
         byte[] salt = Hex.decode(salt_hex);
         char[] password_array = password.toCharArray();
         String computed_password = getPasswordHexHash(password_array, salt);
-        System.out.println("The password does not match for user: " + username);
-        return computed_password.equals(hash_hex);
+
+        if(computed_password.equals(hash_hex)) { //TODO: Simplify this after testing
+            System.out.println("The password matches for user: " + username);
+            return true;
+        } else {
+            System.out.println("The password does not match for user: " + username);
+            return false;
+        }
     }
 
     public static void populateDBUsers(String[] usernames, String[] passwords, MongoClient mongoClient) {
