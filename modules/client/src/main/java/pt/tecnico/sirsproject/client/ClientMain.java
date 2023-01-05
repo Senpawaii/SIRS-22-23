@@ -36,7 +36,6 @@ public class ClientMain {
                             throw new IllegalStateException("Unexpected value: " + action);
                     }
                 }
-
             } else {
                 System.out.println("Incorrect credentials. Please try again.");
             }
