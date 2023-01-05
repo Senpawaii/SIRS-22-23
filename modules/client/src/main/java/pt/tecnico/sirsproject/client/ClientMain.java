@@ -5,6 +5,7 @@ public class ClientMain {
         Client client = new Client();
 
         GUI.printPrompt();
+
         while(true) {
             String[] user_pass = GUI.authenticationPrompt();
             client.setIdentity(user_pass[0], user_pass[1]);
@@ -19,7 +20,11 @@ public class ClientMain {
                                 client.obtainSensorKey();
                             } catch (Exception e) {
                                 System.out.println(e.getMessage());
-                                break selectionMenu;
+                                if(e.getMessage().equals("You do not have enough clearance to access this.")) {
+                                    break;
+                                } else {
+                                    break selectionMenu;
+                                }
                             }
                             System.out.println("A1");
                             break;
