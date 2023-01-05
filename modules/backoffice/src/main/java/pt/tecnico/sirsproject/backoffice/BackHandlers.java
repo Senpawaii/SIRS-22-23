@@ -137,16 +137,18 @@ public class BackHandlers {
                     System.out.println("SensorKey Request:" + username + " sensorKey: " + sensorKey);
                     sendResponse(sx, 200, response.toString());
                 } else {
+                    response.put("symmetricKey", "None");
                     response.put("extra_message", "You do not have enough clearance to access this.");
                     sendResponse(sx, 200, response.toString());
                 }
             } else {
+                response.put("symmetricKey", "None");
                 response.put("extra_message", "Invalid credentials.");
                 sendResponse(sx, 200, response.toString());
             }
-                if(this.manager.hashActiveSession(username)){
+            if(this.manager.hashActiveSession(username)){
 
-                }
+            }
         }
     }
 
