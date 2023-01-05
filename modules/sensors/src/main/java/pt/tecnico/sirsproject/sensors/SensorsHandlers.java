@@ -6,7 +6,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Random;
@@ -19,6 +21,7 @@ import com.sun.net.httpserver.HttpsExchange;
 import pt.tecnico.sirsproject.security.*;
 
 import org.apache.commons.text.StringEscapeUtils;
+import org.bouncycastle.util.BigIntegers;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -92,15 +95,16 @@ public class SensorsHandlers {
                 sx.getResponseBody().close();
             }
 
-            int p = Integer.parseInt(req.getP_prime());
-            int g = Integer.parseInt(req.getG_root());
-            double bigA = Double.parseDouble(req.getBigA());
+            BigInteger p = new BigInteger(req.getP_prime());
+            BigInteger g = new BigInteger(req.getG_root());
+            BigInteger bigA = new BigInteger(req.getBigA());
 
-            int b_secret = new Random().nextInt();
-            double bigB = ((Math.pow(g, b_secret)) % p);
-            String bigB_str = String.valueOf(bigB);
+            // BigInteger b_secret = BigIntegers.createRandomInRange(new BigInteger("100000000"), new BigInteger("1000000000000"), new SecureRandom());
+            BigInteger b_secret = BigIntegers.createRandomBigInteger(64, new SecureRandom());
+            BigInteger bigB = g.modPow(b_secret, p);
+            String bigB_str = bigB.toString();
 
-            double newSecret = ((Math.pow(bigA, b_secret)) % p);
+            BigInteger newSecret = bigA.modPow(b_secret, p);
             String newKey = Base64.getEncoder().encodeToString(String.valueOf(newSecret).getBytes());
             sensors.updateCurrentKey(newKey);
 

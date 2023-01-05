@@ -27,6 +27,9 @@ import java.security.cert.CertificateException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -36,6 +39,8 @@ public class BackOffice {
     private TrustManager[] trustManagers;
     private KeyManager[] keyManagers;
     private SensorKey sensorKey;
+    private SensorKeyManager sensorKeyManager;
+    private ScheduledExecutorService sensorKeyExecutor;
     private final SessionManager manager = new SessionManager();
     private SSLContext sslContext;
     private MongoClient mongoClient;
@@ -46,6 +51,7 @@ public class BackOffice {
         loadKeyStore(keystorePath);
         setTrustManagers();
         setKeyManagers();
+        initSensorKeyManagement();
         setSSLContext();
         createSensorKey();
         createDatabaseConnection();
@@ -94,7 +100,7 @@ public class BackOffice {
         // Load properties file
         properties = new Properties();
         try {
-            properties.load(new FileInputStream("../../extra_files/backoffice/config.properties")); // TODO: Find a more reliable way of using relative paths
+            properties.load(new FileInputStream("extra_files/backoffice/config.properties")); // TODO: Find a more reliable way of using relative paths
         } catch (IOException e) {
             System.out.println("Error reading properties file: " + e.getMessage());
             System.exit(-1);
@@ -195,6 +201,31 @@ public class BackOffice {
         return this.manager;
     }
 
+    private void initSensorKeyManagement() {
+        sensorKeyManager = new SensorKeyManager(properties.getProperty("sensors_ip_address"), properties.getProperty("sensors_port"), trustManagers);
+
+        Runnable sensorKeyRunnable = new Runnable() {
+            public void run() {
+                String newKey = null;
+                
+                try {
+                    newKey = sensorKeyManager.createNewSensorKey();
+                } catch (KeyManagementException | NoSuchAlgorithmException | IOException e) {
+                    System.out.println("Error: Manager was unable to establish new secret key with Sensors.");
+                    e.printStackTrace();
+                    return;
+                }
+
+                sensorKey = new SensorKey(newKey);
+                System.out.println("==> New sensor key: " + sensorKey.getSymmetricKey());
+            }
+        };
+
+        // schedule the execution of the sensorKeyRunnable task once every minute
+        sensorKeyExecutor = Executors.newScheduledThreadPool(1);
+        sensorKeyExecutor.scheduleAtFixedRate(sensorKeyRunnable, 10, 60, TimeUnit.SECONDS);
+    }
+    
     public MongoClient getMongoClient() {
         return this.mongoClient;
     }
