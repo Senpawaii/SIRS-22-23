@@ -55,6 +55,7 @@ public class BackOffice {
         // Insert here all the necessary certificates for the Client
         certificate_paths.put("Client_certificate", "../../extra_files/backoffice/outside_certificates/ClientCertificate.pem");
         certificate_paths.put("Sensors_certificate", "../../extra_files/backoffice/outside_certificates/SensorsCertificate.pem");
+        certificate_paths.put("Mongo_certificate", "../../extra_files/backoffice/outside_certificates/MongoCertificate.pem");
 
         KeyStore keystoreCertificates = RSAUtils.loadKeyStoreCertificates(certificate_paths);
         this.trustManagers = RSAUtils.loadTrustManagers(keystoreCertificates);
