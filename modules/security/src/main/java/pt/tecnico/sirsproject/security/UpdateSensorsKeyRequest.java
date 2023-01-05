@@ -1,27 +1,14 @@
 package pt.tecnico.sirsproject.security;
 
-public class UpdateSensorsKeyRequest {
-    private String new_key = "dummy";
-    private String p_prime = "23";
-    private String g_root = "5";
-    private String bigA = "4";
-
-    public UpdateSensorsKeyRequest(String new_key) {
-        this.new_key = new_key;
-    }
+public class UpdateSensorsKeyRequest extends Request {
+    private String p_prime;
+    private String g_root;
+    private String bigA;
 
     public UpdateSensorsKeyRequest(String p, String g, String A) {
         this.p_prime = p;
         this.g_root = g;
         this.bigA = A;
-    }
-
-    public String getNew_key() {
-        return this.new_key;
-    }
-
-    public void setNew_key(String new_key) {
-        this.new_key = new_key;
     }
 
     public String getP_prime() {

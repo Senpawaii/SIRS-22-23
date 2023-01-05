@@ -36,6 +36,7 @@ public class SensorsMain {
             server.createContext("/test", new PingHandler());
             server.createContext("/getkey", new GetKeyHandler(sensors));
             server.createContext("/updatekey", new UpdateKeyHandler(sensors));
+            server.createContext("/getinfo", new ClientCommHandler(sensors));
             server.setExecutor(null);
             System.out.println("Server started on port " + port + "!");
             server.start();

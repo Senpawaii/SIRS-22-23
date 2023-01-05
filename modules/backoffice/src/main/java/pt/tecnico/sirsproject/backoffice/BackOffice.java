@@ -212,18 +212,18 @@ public class BackOffice {
                     newKey = sensorKeyManager.createNewSensorKey();
                 } catch (KeyManagementException | NoSuchAlgorithmException | IOException e) {
                     System.out.println("Error: Manager was unable to establish new secret key with Sensors.");
-                    e.printStackTrace();
+                    // e.printStackTrace();
                     return;
                 }
+                System.out.println("==> New sensor key: " + newKey);
 
                 sensorKey = new SensorKey(newKey);
-                System.out.println("==> New sensor key: " + sensorKey.getSymmetricKey());
             }
         };
 
-        // schedule the execution of the sensorKeyRunnable task once every minute
+        // schedule the execution of the sensorKeyRunnable task once every 10 minutes
         sensorKeyExecutor = Executors.newScheduledThreadPool(1);
-        sensorKeyExecutor.scheduleAtFixedRate(sensorKeyRunnable, 10, 60, TimeUnit.SECONDS);
+        sensorKeyExecutor.scheduleAtFixedRate(sensorKeyRunnable, 5, 10*60, TimeUnit.SECONDS);
     }
 
     public MongoClient getMongoClient() {

@@ -2,6 +2,7 @@ package pt.tecnico.sirsproject.security;
 
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpsExchange;
+
 import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.BufferedReader;
@@ -46,6 +47,26 @@ public class RequestParsing {
         Gson gson = new Gson();
         try {
             return gson.fromJson(requestBody, UpdateSensorsKeyRequest.class);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public static ClientSensorsRequest parseClientSensorsRequestToJSON(HttpsExchange exc, String key) throws IOException, SensorsDecryptionException {
+        InputStreamReader isr = new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8);
+        BufferedReader br = new BufferedReader(isr);
+        String requestBody = removeQuotesAndUnescape(br.readLine());
+
+        String decryptedRequest = SymmetricKeyEncryption.decrypt(requestBody, key);
+        if (decryptedRequest == "") {
+            // unable to decrypt, probably wrong key
+            throw new SensorsDecryptionException("Unable to decrypt client request.");
+        }
+
+        Gson gson = new Gson();
+        try {
+            return gson.fromJson(requestBody, ClientSensorsRequest.class);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }

@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.SecureRandom;
 import java.time.Instant;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -57,7 +58,7 @@ public class BackHandlers {
             HttpsExchange sx = (HttpsExchange) x;
             String requestMethod = sx.getRequestMethod();
             if (!requestMethod.equals("POST")) {
-                //ERROR case
+                sx.sendResponseHeaders(405, -1);
                 return;
             }
 
@@ -76,6 +77,15 @@ public class BackHandlers {
             // TODO: Sanitize Strings
 
             JSONObject response = new JSONObject();
+
+            // ===FOR TESTING ONLY===
+            // String token = this.manager.createSession(username);
+
+            // response.put("token", token);
+            // System.out.println("Auth Request:" + username + " token: " + token);
+            // sendResponse(sx, 200, response.toString());
+
+
             if(DatabaseCommunications.validate_credentials(username, password, this.mongoClient)) {
 
                 // If the client already has a valid token, delete the current and generate a new one.
@@ -97,11 +107,14 @@ public class BackHandlers {
 
     /* Add the other possible handlers the BackOffice might have here */
     public static class SensorKeyHandler implements HttpHandler {
-        private final SensorKey sensorKey;
+        // private final SensorKey sensorKey;
         private final SessionManager manager;
-        public SensorKeyHandler(SensorKey key, SessionManager manager) {
-            this.sensorKey = key;
-            this.manager = manager;
+        private BackOffice backoffice;
+        public SensorKeyHandler(/*SensorKey key, SessionManager manager*/ BackOffice backoffice) {
+            // this.sensorKey = key;
+            // this.manager = manager;
+            this.backoffice = backoffice;
+            this.manager = backoffice.getManager();
         }
 
         @Override
@@ -128,8 +141,8 @@ public class BackHandlers {
 
             if(validate_session(username, sessionToken, manager)) {
                 JSONObject response = new JSONObject();
-                response.put("symmetricKey", this.sensorKey.getSymmetricKey());
-                System.out.println("SensorKey Request:" + username + " sensorKey: " + sensorKey);
+                response.put("symmetricKey", /*this.sensorKey.getSymmetricKey()*/this.backoffice.getSensorKey().getSymmetricKey());
+                System.out.println("SensorKey Request:" + username + " sensorKey: " + /*sensorKey*/this.backoffice.getSensorKey());
                 sendResponse(sx, 200, response.toString());
             } else {
                 sendResponse(sx, 401, "Invalid credentials.");

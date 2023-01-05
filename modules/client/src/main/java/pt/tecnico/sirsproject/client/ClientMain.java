@@ -29,6 +29,9 @@ public class ClientMain {
                         case "A3": // Buy parts
                             System.out.println("A3");
                             break;
+                        case "C1": // Contact Sensors
+                            client.accessSensors();
+                            break;
                         case "4":
                             System.out.println("Exiting...");
                             System.exit(0);
@@ -36,7 +39,6 @@ public class ClientMain {
                             throw new IllegalStateException("Unexpected value: " + action);
                     }
                 }
-
             } else {
                 System.out.println("Incorrect credentials. Please try again.");
             }

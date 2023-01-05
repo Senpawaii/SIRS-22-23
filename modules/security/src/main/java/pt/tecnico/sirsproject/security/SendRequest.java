@@ -61,16 +61,20 @@ public class SendRequest {
         }
 
         // Read the response
-        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        String inputLine;
-        StringBuilder response = new StringBuilder();
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        in.close();
+        if (con.getContentLength() > 0) {
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
 
-        // Print the response
-        System.out.println(response);
-        return new String(response);
+            // Print the response
+            System.out.println(response);
+            return new String(response);
+        }
+
+        return "";
     }
 }

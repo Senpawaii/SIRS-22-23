@@ -47,7 +47,16 @@ public class GUI {
                     // comms.contactFrontoffice();
                     break;
                 case "3":
-                    System.out.println("Contact Actuators");
+                    // System.out.println("Contact Actuators");
+                    while (true) {
+                        command = printSensorsMenu(sc);
+                        if (command.equals("1")) {
+                            return "C" + command;
+                        } else if (command.equals("2")) {
+                            break;
+                        }
+                        System.out.println("Please insert a valid command.");
+                    }
                     break;
                 case "4":
                     System.out.println("Goodbye!");
@@ -69,6 +78,17 @@ public class GUI {
         System.out.println("2 - Query stock");
         System.out.println("3 - Buy Parts");
         System.out.println("4 - Back");
+        System.out.println();
+        return sc.nextLine();
+    }
+
+    public static String printSensorsMenu(Scanner sc) {
+        System.out.println("-----------------------------------");
+        System.out.println("=Actuators/Sensors Menu=");
+        System.out.println("-----------------------------------");
+        System.out.println();
+        System.out.println("1 - Request Info");
+        System.out.println("2 - Back");
         System.out.println();
         return sc.nextLine();
     }

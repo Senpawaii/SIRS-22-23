@@ -20,6 +20,8 @@ public class Client {
     private PublicKey backoffice_publicK;
     private final String backoffice_address;
     private final String backoffice_port;
+    private final String sensors_address;
+    private final String sensors_port;
     private String token;
     private TrustManager[] trustManagers;
     private SensorKey sensorKey;
@@ -28,6 +30,8 @@ public class Client {
         loadPropertiesFile();
         this.backoffice_address = properties.getProperty("backoffice_ip_address");
         this.backoffice_port = properties.getProperty("backoffice_port");
+        this.sensors_address = properties.getProperty("sensors_ip_address");
+        this.sensors_port = properties.getProperty("sensors_port");
         loadPublicKeys();
         setTrustManagers();
     }
@@ -100,6 +104,23 @@ public class Client {
             throw new Exception("Invalid token.");
         }
         this.sensorKey = new SensorKey(sensorKey);
+    }
+
+    public void accessSensors() {
+        Gson gson = new Gson();
+
+        ClientSensorsRequest request = new ClientSensorsRequest(this.username);
+        String json = gson.toJson(request);
+        String encrypted_json = SymmetricKeyEncryption.encrypt(json, this.sensorKey.getSymmetricKey());
+
+        String response = ClientCommunications.connect_to_sensors(encrypted_json, "GET", "/getinfo", 
+                            this.sensors_address, this.sensors_port, trustManagers);
+
+        String decrypted_response = SymmetricKeyEncryption.decrypt(response, this.sensorKey.getSymmetricKey());
+        
+        if (decrypted_response != null) {
+            System.out.println(decrypted_response);
+        }
     }
 
     public String getUsername() {
