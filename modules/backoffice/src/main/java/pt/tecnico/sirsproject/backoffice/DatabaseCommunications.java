@@ -36,7 +36,7 @@ public final class DatabaseCommunications {
         byte[] salt = Hex.decode(salt_hex);
         char[] password_array = password.toCharArray();
         String computed_password = getPasswordHexHash(password_array, salt);
-
+        System.out.println("The password does not match for user: " + username);
         return computed_password.equals(hash_hex);
     }
 

@@ -31,8 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.mongodb.client.model.Filters.eq;
-
 public class BackOffice {
     private KeyStore keystore;
     private Properties properties;
@@ -42,6 +40,7 @@ public class BackOffice {
     private SensorKeyManager sensorKeyManager;
     private ScheduledExecutorService sensorKeyExecutor;
     private final SessionManager manager = new SessionManager();
+    private final AccessControlManager accessControlManager = new AccessControlManager();
     private SSLContext sslContext;
     private MongoClient mongoClient;
 
@@ -228,5 +227,9 @@ public class BackOffice {
 
     public MongoClient getMongoClient() {
         return this.mongoClient;
+    }
+
+    public AccessControlManager getAccessControlManager() {
+        return this.accessControlManager;
     }
 }
