@@ -109,7 +109,7 @@ public class FrontOffice {
 
     private void createDatabaseConnection() {
         ConnectionString connectionString = new ConnectionString(
-                "mongodb://frontoffice:frontoffice@192.168.0.100:27018/Users?ssl=true"); //TODO: Place the username/password in a properties.file
+                "mongodb://frontoffice:frontoffice@192.168.0.100:27017/Users?ssl=true"); //TODO: Place the username/password in a properties.file
         MongoClientSettings settings = MongoClientSettings.builder()
                 .applyToSslSettings(builder -> builder.enabled(true).context(this.sslContext).invalidHostNameAllowed(true))
                 .applyConnectionString(connectionString)

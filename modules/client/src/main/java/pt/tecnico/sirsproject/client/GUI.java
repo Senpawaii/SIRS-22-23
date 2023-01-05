@@ -43,8 +43,15 @@ public class GUI {
                     }
                     break;
                 case "2":
-                    System.out.println("Contact FrontOffice");
-                    // comms.contactFrontoffice();
+                    while (true) {
+                        command = printFrontofficeMenu(sc);
+                        if (command.equals("1") || command.equals("2")) {
+                            return "B" + command;
+                        } else if (command.equals("4")) {
+                            break;
+                        }
+                        System.out.println("Please insert a valid command.");
+                    }
                     break;
                 case "3":
                     System.out.println("Contact Actuators");
@@ -68,6 +75,18 @@ public class GUI {
         System.out.println("1 - Request Sensor Key");
         System.out.println("2 - Query stock");
         System.out.println("3 - Buy Parts");
+        System.out.println("4 - Back");
+        System.out.println();
+        return sc.nextLine();
+    }
+
+    public static String printFrontofficeMenu(Scanner sc) {
+        System.out.println("-----------------------------------");
+        System.out.println("=FrontOffice Menu=");
+        System.out.println("-----------------------------------");
+        System.out.println();
+        System.out.println("1 - Request public information");
+        System.out.println("2 - Request private information");
         System.out.println("4 - Back");
         System.out.println();
         return sc.nextLine();
