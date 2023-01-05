@@ -55,13 +55,13 @@ public class BackOffice {
         setSSLContext();
         createSensorKey();
         createDatabaseConnection();
-        populateDB();
+        // populateDB();
     }
 
     // This method is used only for demonstration of the project
     private void populateDB() {
         String[] usernames = {"Joao", "Antonio", "Joana", "Carlota", "Jacare", "Carmina"};
-        String[] passwords = {"joao_pass", "antonio_pass", "carlota_pass", "jacare_pass", "carmina_pass"};
+        String[] passwords = {"joao_pass", "antonio_pass", "joana_pass", "carlota_pass", "jacare_pass", "carmina_pass"};
         DatabaseCommunications.populateDBUsers(usernames, passwords,mongoClient);
     }
 
