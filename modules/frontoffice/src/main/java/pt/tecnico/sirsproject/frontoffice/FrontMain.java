@@ -10,8 +10,6 @@ public class FrontMain {
     static FrontOffice frontoffice;
 
     public static void main(String[] args) {
-        GenerateJKS jks = new GenerateJKS();
-
         SessionManager manager = new SessionManager();
         int port = -1;
         String ksFile = "";
@@ -38,7 +36,7 @@ public class FrontMain {
             System.out.println("Starting server on port " + port + "...");
             HttpsServer server = frontoffice.createTLSServer(port);
             server.createContext("/test", new PingHandler());
-            server.createContext("/auth", new AuthenticateHandler(manager));
+            server.createContext("/auth", new AuthenticateHandler(frontoffice.getManager(), frontoffice.getMongoClient()));
             server.setExecutor(null);
             System.out.println("Server started on port " + port + "!");
             server.start();

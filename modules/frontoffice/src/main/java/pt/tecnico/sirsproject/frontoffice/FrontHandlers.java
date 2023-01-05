@@ -1,26 +1,20 @@
 package pt.tecnico.sirsproject.frontoffice;
 
+import com.mongodb.client.MongoClient;
 import com.sun.net.httpserver.HttpHandler;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Base64.Decoder;
+import java.time.Instant;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
 
-import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.google.gson.Gson;
-//import pt.tecnico.sirsproject.security.SymmetricKey;
+import pt.tecnico.sirsproject.security.*;
+import pt.tecnico.sirsproject.security.RequestParsing;
 
 
 public class FrontHandlers {
@@ -30,7 +24,7 @@ public class FrontHandlers {
 
             JSONArray content = new JSONArray();
             content.put("Hello there from the Front-office!");
-            content.put("The server is up and running :)");
+            content.put("The server is up and running:)");
 
             String response = content.toString(1);  // the argument "1" formats each entry into a seperate line
 
@@ -48,9 +42,11 @@ public class FrontHandlers {
 
     public static class AuthenticateHandler implements HttpHandler {
         private final SessionManager manager;
+        private final MongoClient mongoClient;
 
-        public AuthenticateHandler(SessionManager manager) {
+        public AuthenticateHandler(SessionManager manager, MongoClient mongoClient) {
             this.manager = manager;
+            this.mongoClient = mongoClient;
         }
 
         @Override
@@ -65,75 +61,37 @@ public class FrontHandlers {
                 return;
             }
 
-            AuthRequest auth_request;
+            CredentialsRequest credentialsRequest;
             try {
-                auth_request = parseRequestToJSON(sx);
-            } catch(IOException exception) {
-                System.out.println(exception.getMessage());
+                credentialsRequest = RequestParsing.parseCredentialsRequestToJSON(sx);
+            } catch(IOException e) {
+                System.out.println("Error: Couldn't parse Credentials Request to JSON format. " + e.getMessage());
                 return;
             }
 
             // TODO: Add validation for .getString
-            byte[] encrypted_shared_key_b64 = auth_request.getEncrypted_shared_key().getBytes();
-            byte[] encrypted_shared_key = Base64.getDecoder().decode(encrypted_shared_key_b64);
-            byte[] shared_key_b64 = FrontMain.frontoffice.decryptWithRSA(encrypted_shared_key);
-            byte[] shared_key = Base64.getDecoder().decode(shared_key_b64);
-
-            String encrypted_username_b64 = auth_request.getEncrypted_username();
-            byte[] encrypted_username = Base64.getDecoder().decode(encrypted_username_b64.getBytes());
-
-            String encrypted_hash_password_b64 = auth_request.getEncrypted_hash_password();
-            byte[] encrypted_hash_password = Base64.getDecoder().decode(encrypted_hash_password_b64.getBytes());
-
-            String username = FrontMain.frontoffice.decryptWithSymmetric(Base64.getEncoder().encodeToString(encrypted_username), shared_key);
-            String hash_password = FrontMain.frontoffice.decryptWithSymmetric(Base64.getEncoder().encodeToString(encrypted_hash_password), shared_key);
-
+            assert credentialsRequest != null;
+            String username = credentialsRequest.getUsername();
+            String password = credentialsRequest.getPassword();
             // TODO: Sanitize Strings
 
-            if(validate_credentials(username, hash_password)) {
+            JSONObject response = new JSONObject();
+            if(DatabaseCommunications.validate_credentials(username, password, this.mongoClient)) {
+
                 // If the client already has a valid token, delete the current and generate a new one.
                 if(this.manager.hashActiveSession(username)){
+                    System.out.println("User: " + username + " already has an active session.");
                     this.manager.deleteSession(username);
                 }
                 String token = this.manager.createSession(username);
 
-                // Encrypt the token with the shared symmetric key
-                String encrypted_token = SymmetricKey.encrypt(token, Base64.getEncoder().encodeToString(shared_key));
-
-                JSONObject response = new JSONObject();
-                response.put("encrypted_token", encrypted_token);
+                response.put("token", token);
                 System.out.println("Auth Request:" + username + " token: " + token);
                 sendResponse(sx, 200, response.toString());
             } else {
-                sendResponse(sx, 401, "Invalid credentials.");
+                response.put("token", "Null");
+                sendResponse(sx, 200, response.toString());
             }
-        }
-
-        private AuthRequest parseRequestToJSON(HttpsExchange exc) throws IOException {
-            InputStreamReader isr = new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8);
-            BufferedReader br = new BufferedReader(isr);
-            String requestBody = removeQuotesAndUnescape(br.readLine());
-
-            Gson gson = new Gson();
-            AuthRequest request = null;
-            try {
-                request = gson.fromJson(requestBody, AuthRequest.class);
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
-
-            return request;
-        }
-
-        private String removeQuotesAndUnescape(String uncleanJson) {
-            String noQuotes = uncleanJson.replaceAll("^\"|\"$", "");
-
-            return StringEscapeUtils.unescapeJava(noQuotes);
-        }
-
-        private static boolean validate_credentials(String username, String hash_password) {
-            // TODO: contact DB and check credentials
-            return true;
         }
     }
 

@@ -1,36 +1,87 @@
 package pt.tecnico.sirsproject.frontoffice;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.ServerApi;
+import com.mongodb.ServerApiVersion;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
-import pt.tecnico.sirsproject.security.SymmetricKey;
+import org.bson.Document;
+import pt.tecnico.sirsproject.security.RSAUtils;
+import pt.tecnico.sirsproject.security.SymmetricKeyEncryption;
+import pt.tecnico.sirsproject.security.TLS_SSL;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.*;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Properties;
-import java.util.Scanner;
+
+import static com.mongodb.client.model.Filters.eq;
 
 public class FrontOffice {
     private static KeyStore keystore;
     private Properties properties;
-    private KeyManagerFactory keyManager;
-    private TrustManagerFactory trustManager; 
+    private TrustManager[] trustManagers;
+    private KeyManager[] keyManagers;
+    private final SessionManager manager = new SessionManager();
+    private SSLContext sslContext;
+    private MongoClient mongoClient; 
 
 
     public FrontOffice(String keystorePath) {
     	loadProperties();
     	loadKeyStore(keystorePath);
-    	initializeKeyAndTrustManager();
+    	setTrustManagers();
+        setKeyManagers();
+        setSSLContext();
+        
+        // TODO: uncomment
+        //createDatabaseConnection(); 
+        //populateDB();
+    }
+
+    // This method is used only for demonstration of the project
+    private void populateDB() {
+        String[] usernames = {"Client1", "Client2", "Client3"};
+        String[] passwords = {"client1_pass", "client2_pass"};
+        DatabaseCommunications.populateDBUsers(usernames, passwords,mongoClient);
+    }
+
+    private void setTrustManagers() {
+        HashMap<String, String> certificate_paths = new HashMap<>();
+        // Insert here all the necessary certificates for the Client
+        certificate_paths.put("Client_certificate", "../../extra_files/frontoffice/outside_certificates/ClientCertificate.pem");
+        certificate_paths.put("Mongo_certificate", "../../extra_files/frontoffice/outside_certificates/MongoDBCertificate.pem");
+
+        KeyStore keystoreCertificates = RSAUtils.loadKeyStoreCertificates(certificate_paths);
+        this.trustManagers = RSAUtils.loadTrustManagers(keystoreCertificates);
+    }
+
+    private void setKeyManagers() {
+        String keystore_password = properties.getProperty("keystore_pass");
+        char[] pass = keystore_password.toCharArray();
+
+        this.keyManagers = RSAUtils.loadKeyManagers(this.keystore, pass);
+    }
+
+    private void setSSLContext() {
+        try {
+            sslContext = TLS_SSL.createSSLContext(trustManagers, keyManagers);
+        } catch(NoSuchAlgorithmException | KeyManagementException e) {
+            System.out.println("Error: Couldn't create SSL context. " + e.getMessage());
+            System.exit(1);
+        }
     }
 
     private void loadProperties() {
@@ -56,19 +107,15 @@ public class FrontOffice {
         }
     }
 
-    private void initializeKeyAndTrustManager() {
-        String password = properties.getProperty("keystore_pass");
-        char[] pass = password.toCharArray();
+    private void createDatabaseConnection() {
+        ConnectionString connectionString = new ConnectionString(
+                "mongodb://frontoffice:frontoffice@192.168.0.100:27018/Users?ssl=true"); //TODO: Place the username/password in a properties.file
+        MongoClientSettings settings = MongoClientSettings.builder()
+                .applyToSslSettings(builder -> builder.enabled(true).context(this.sslContext).invalidHostNameAllowed(true))
+                .applyConnectionString(connectionString)
+                .build();
 
-        // Initialize the key and trust manager factories
-        try {
-            keyManager = KeyManagerFactory.getInstance("SunX509");
-            trustManager = TrustManagerFactory.getInstance("SunX509");
-            keyManager.init(keystore, pass);
-            trustManager.init(keystore);
-        } catch (NoSuchAlgorithmException | KeyStoreException | UnrecoverableKeyException e) {
-            System.out.println("Error: Couldn't initialize key or trust manager factory " + e.getMessage());
-        }
+        mongoClient = MongoClients.create(settings);
     }
 
     public HttpsServer createTLSServer(int port)
@@ -84,23 +131,8 @@ public class FrontOffice {
     		throw new TLSServerException("Error: Couldn't create server on requested port " + port + ".", e);
     	}
 
-    	// Initialize the SSL context
-        SSLContext context;
-        try {
-            context = SSLContext.getInstance("TLS");
-        } catch (NoSuchAlgorithmException e) {
-            throw new TLSServerException("Error: Couldn't find requested SSL Context algorithm.", e);
-        }
-
-    	// Initialize the SSL context with the key and trust managers
-    	try {
-    		context.init(keyManager.getKeyManagers(), trustManager.getTrustManagers(), null);
-    	} catch (KeyManagementException e) {
-    		throw new TLSServerException("Error: Unable to initialize SSL context.", e);
-    	}
-
     	// Set the SSL context for the frontoffice server
-    	server.setHttpsConfigurator(new HttpsConfigurator(context) {
+    	server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
     		public void configure(HttpsParameters params) {
     			try {
     				SSLContext sslcontext = SSLContext.getDefault();
@@ -146,6 +178,14 @@ public class FrontOffice {
     }
 
     String decryptWithSymmetric(String encrypted_data, byte[] key) {
-        return SymmetricKey.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
+        return SymmetricKeyEncryption.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
+    }
+
+    public SessionManager getManager() {
+        return this.manager;
+    }
+
+    public MongoClient getMongoClient() {
+        return this.mongoClient;
     }
 }
