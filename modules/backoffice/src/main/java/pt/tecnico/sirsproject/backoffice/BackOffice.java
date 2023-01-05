@@ -64,7 +64,7 @@ public class BackOffice {
         // Insert here all the necessary certificates for the Client
         certificate_paths.put("Client_certificate", "../../extra_files/backoffice/outside_certificates/ClientCertificate.pem");
         certificate_paths.put("Sensors_certificate", "../../extra_files/backoffice/outside_certificates/SensorsCertificate.pem");
-        certificate_paths.put("Mongo_certificate", "../../extra_files/backoffice/outside_certificates/MongoCertificate.pem");
+        certificate_paths.put("Mongo_certificate", "../../extra_files/backoffice/outside_certificates/MongoDBCertificate.pem");
 
         KeyStore keystoreCertificates = RSAUtils.loadKeyStoreCertificates(certificate_paths);
         this.trustManagers = RSAUtils.loadTrustManagers(keystoreCertificates);
@@ -119,9 +119,6 @@ public class BackOffice {
         MongoClientSettings settings = MongoClientSettings.builder()
                 .applyToSslSettings(builder -> builder.enabled(true).context(this.sslContext).invalidHostNameAllowed(true))
                 .applyConnectionString(connectionString)
-                .serverApi(ServerApi.builder()
-                        .version(ServerApiVersion.V1)
-                        .build())
                 .build();
 
         mongoClient = MongoClients.create(settings);
