@@ -55,7 +55,7 @@ public class BackOffice {
         // Insert here all the necessary certificates for the Client
         certificate_paths.put("Client_certificate", "../../extra_files/backoffice/outside_certificates/ClientCertificate.pem");
         certificate_paths.put("Sensors_certificate", "../../extra_files/backoffice/outside_certificates/SensorsCertificate.pem");
-        certificate_paths.put("Mongo_certificate", "../../extra_files/backoffice/outside_certificates/MongoCertificate.pem");
+        certificate_paths.put("Mongo_certificate", "../../extra_files/backoffice/outside_certificates/MongoDBCertificate.pem");
 
         KeyStore keystoreCertificates = RSAUtils.loadKeyStoreCertificates(certificate_paths);
         this.trustManagers = RSAUtils.loadTrustManagers(keystoreCertificates);
@@ -106,13 +106,10 @@ public class BackOffice {
 
     private void createDatabaseConnection() {
         ConnectionString connectionString = new ConnectionString(
-                "mongodb://backoffice:backoffice@192.168.0.100:27017/Users?ssl=true&sslInvalidCertificatesAllowed=true");
+                "mongodb://backoffice:backoffice@192.168.0.100:27017/Users");
         MongoClientSettings settings = MongoClientSettings.builder()
-                .applyToSslSettings(builder -> builder.enabled(true).context(this.sslContext))
+                .applyToSslSettings(builder -> builder.enabled(true).context(this.sslContext).invalidHostNameAllowed(true))
                 .applyConnectionString(connectionString)
-                .serverApi(ServerApi.builder()
-                        .version(ServerApiVersion.V1)
-                        .build())
                 .build();
         MongoClient mongoClient = MongoClients.create(settings);
         MongoDatabase database = mongoClient.getDatabase("Users");
