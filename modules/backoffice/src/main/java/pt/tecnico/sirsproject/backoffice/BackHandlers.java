@@ -1,25 +1,18 @@
 package pt.tecnico.sirsproject.backoffice;
 
+import com.mongodb.client.MongoClient;
 import com.sun.net.httpserver.HttpHandler;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Objects;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
 
-import org.apache.commons.text.StringEscapeUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.google.gson.Gson;
 import pt.tecnico.sirsproject.security.*;
 import pt.tecnico.sirsproject.security.RequestParsing;
 
@@ -49,9 +42,11 @@ public class BackHandlers {
 
     public static class AuthenticateHandler implements HttpHandler {
         private final SessionManager manager;
+        private final MongoClient mongoClient;
 
-        public AuthenticateHandler(SessionManager manager) {
+        public AuthenticateHandler(SessionManager manager, MongoClient mongoClient) {
             this.manager = manager;
+            this.mongoClient = mongoClient;
         }
 
         @Override
@@ -81,7 +76,7 @@ public class BackHandlers {
             // TODO: Sanitize Strings
 
             JSONObject response = new JSONObject();
-            if(validate_credentials(username, password)) {
+            if(DatabaseCommunications.validate_credentials(username, password, this.mongoClient)) {
 
                 // If the client already has a valid token, delete the current and generate a new one.
                 if(this.manager.hashActiveSession(username)){
@@ -97,11 +92,6 @@ public class BackHandlers {
                 response.put("token", "Null");
                 sendResponse(sx, 200, response.toString());
             }
-        }
-
-        private static boolean validate_credentials(String username, String hash_password) {
-            // TODO: contact DB and check credentials
-            return true;
         }
     }
 
