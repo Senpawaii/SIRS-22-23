@@ -55,13 +55,13 @@ public class BackOffice {
         setSSLContext();
         createSensorKey();
         createDatabaseConnection();
-        populateDB();
+        // populateDB();
     }
 
     // This method is used only for demonstration of the project
     private void populateDB() {
         String[] usernames = {"Joao", "Antonio", "Joana", "Carlota", "Jacare", "Carmina"};
-        String[] passwords = {"joao_pass", "antonio_pass", "carlota_pass", "jacare_pass", "carmina_pass"};
+        String[] passwords = {"joao_pass", "antonio_pass", "joana_pass", "carlota_pass", "jacare_pass", "carmina_pass"};
         DatabaseCommunications.populateDBUsers(usernames, passwords,mongoClient);
     }
 
@@ -100,7 +100,7 @@ public class BackOffice {
         // Load properties file
         properties = new Properties();
         try {
-            properties.load(new FileInputStream("extra_files/backoffice/config.properties")); // TODO: Find a more reliable way of using relative paths
+            properties.load(new FileInputStream("../../extra_files/backoffice/config.properties")); // TODO: Find a more reliable way of using relative paths
         } catch (IOException e) {
             System.out.println("Error reading properties file: " + e.getMessage());
             System.exit(-1);
@@ -225,7 +225,7 @@ public class BackOffice {
         sensorKeyExecutor = Executors.newScheduledThreadPool(1);
         sensorKeyExecutor.scheduleAtFixedRate(sensorKeyRunnable, 10, 60, TimeUnit.SECONDS);
     }
-    
+
     public MongoClient getMongoClient() {
         return this.mongoClient;
     }
