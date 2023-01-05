@@ -76,7 +76,7 @@ public class Client {
         CredentialsResponse response = gson.fromJson(response_json, CredentialsResponse.class);
         if(response != null) {
             String token = response.getToken();
-            if(token != null) {
+            if(!token.equals("Null")) {
                 setToken(token);
             } else {
                 return false;
