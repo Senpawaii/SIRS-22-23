@@ -70,7 +70,7 @@ public final class DatabaseCommunications {
 
     private static void storeDocument(String username, String hash_hex, String salt_hex, MongoClient mongoClient) {
         MongoDatabase users_database = mongoClient.getDatabase("Users");
-        MongoCollection<Document> users_collection = users_database.getCollection("users_pass");
+        MongoCollection<Document> users_collection = users_database.getCollection("user_pass");
         Document user_pass = new Document("_id", new ObjectId());
         user_pass.append("user", username)
                  .append("hash",hash_hex)

@@ -38,8 +38,8 @@ public class SendRequest {
             throw new ProtocolException();
         }
 
-        con.setRequestProperty("Content-length", String.valueOf(json_req.length()));
         con.setRequestProperty("Content-Type","application/json");
+        con.setRequestProperty("Content-Length", String.valueOf(json_req.length()));
         con.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/46.0.2490.80");
 
         // Send the request body
@@ -56,6 +56,7 @@ public class SendRequest {
             }
         } catch (IOException e) {
             System.out.println("Error: I/O error. " + e.getMessage());
+            e.printStackTrace();
             throw new IOException();
         }
 
