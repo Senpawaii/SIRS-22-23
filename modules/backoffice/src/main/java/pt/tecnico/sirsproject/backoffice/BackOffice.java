@@ -38,6 +38,7 @@ public class BackOffice {
     private SensorKey sensorKey;
     private final SessionManager manager = new SessionManager();
     private SSLContext sslContext;
+    private MongoClient mongoClient;
 
 
     public BackOffice(String keystorePath) {
@@ -48,6 +49,14 @@ public class BackOffice {
         setSSLContext();
         createSensorKey();
         createDatabaseConnection();
+        populateDB();
+    }
+
+    // This method is used only for demonstration of the project
+    private void populateDB() {
+        String[] usernames = {"Joao", "Antonio", "Joana", "Carlota", "Jacare", "Carmina"};
+        String[] passwords = {"joao_pass", "antonio_pass", "carlota_pass", "jacare_pass", "carmina_pass"};
+        DatabaseCommunications.populateDBUsers(usernames, passwords,mongoClient);
     }
 
     private void setTrustManagers() {
@@ -106,23 +115,17 @@ public class BackOffice {
 
     private void createDatabaseConnection() {
         ConnectionString connectionString = new ConnectionString(
-                "mongodb://backoffice:backoffice@192.168.0.100:27017/Users?ssl=true&sslInvalidCertificatesAllowed=true");
+                "mongodb://backoffice:backoffice@192.168.0.100:27017/Users?ssl=true"); //TODO: Place the username/password in a properties.file
         MongoClientSettings settings = MongoClientSettings.builder()
-                .applyToSslSettings(builder -> builder.enabled(true).context(this.sslContext))
+                .applyToSslSettings(builder -> builder.enabled(true).context(this.sslContext).invalidHostNameAllowed(true))
                 .applyConnectionString(connectionString)
                 .serverApi(ServerApi.builder()
                         .version(ServerApiVersion.V1)
                         .build())
                 .build();
-        MongoClient mongoClient = MongoClients.create(settings);
-        MongoDatabase database = mongoClient.getDatabase("Users");
-        MongoCollection<Document> collection = database.getCollection("user_pass");
-        Document doc = collection.find().first();
-        if (doc != null) {
-            System.out.println(doc.toJson());
-        } else {
-            System.out.println("No matching documents found.");
-        }
+
+        mongoClient = MongoClients.create(settings);
+
     }
 
     HttpsServer createTLSServer(int port)
@@ -193,5 +196,9 @@ public class BackOffice {
 
     public SessionManager getManager() {
         return this.manager;
+    }
+
+    public MongoClient getMongoClient() {
+        return this.mongoClient;
     }
 }

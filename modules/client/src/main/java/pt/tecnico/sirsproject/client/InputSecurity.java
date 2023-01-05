@@ -20,6 +20,5 @@ public class InputSecurity {
     static String getPassword(Scanner sc) {
         System.out.print("Password: ");
         return sc.nextLine();
-//        return Hashing.sha256().hashString(passwordString, StandardCharsets.UTF_8).toString();
     }
 }
