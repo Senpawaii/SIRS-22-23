@@ -3,5 +3,10 @@ launch.json
 __pycache__/
 project_development/
 target/
-extra_files/
+*.pem
+*.jks
+*.p12
+*.properties
+*.der
+*.crt
 .idea/

@@ -42,6 +42,11 @@
 			<artifactId>commons-text</artifactId>
 			<version>1.10.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.mongodb</groupId>
+			<artifactId>mongodb-driver-sync</artifactId>
+			<version>4.8.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>

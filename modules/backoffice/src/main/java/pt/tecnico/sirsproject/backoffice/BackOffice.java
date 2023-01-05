@@ -1,8 +1,17 @@
 package pt.tecnico.sirsproject.backoffice;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.ServerApi;
+import com.mongodb.ServerApiVersion;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
+import org.bson.Document;
 import pt.tecnico.sirsproject.security.RSAUtils;
 import pt.tecnico.sirsproject.security.SensorKey;
 import pt.tecnico.sirsproject.security.SymmetricKeyEncryption;
@@ -19,6 +28,8 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Properties;
 
+import static com.mongodb.client.model.Filters.eq;
+
 public class BackOffice {
     private KeyStore keystore;
     private Properties properties;
@@ -26,6 +37,7 @@ public class BackOffice {
     private KeyManager[] keyManagers;
     private SensorKey sensorKey;
     private final SessionManager manager = new SessionManager();
+    private SSLContext sslContext;
 
 
     public BackOffice(String keystorePath) {
@@ -33,6 +45,7 @@ public class BackOffice {
         loadKeyStore(keystorePath);
         setTrustManagers();
         setKeyManagers();
+        setSSLContext();
         createSensorKey();
         createDatabaseConnection();
     }
@@ -52,6 +65,15 @@ public class BackOffice {
         char[] pass = keystore_password.toCharArray();
 
         this.keyManagers = RSAUtils.loadKeyManagers(this.keystore, pass);
+    }
+
+    private void setSSLContext() {
+        try {
+            sslContext = TLS_SSL.createSSLContext(trustManagers, keyManagers);
+        } catch(NoSuchAlgorithmException | KeyManagementException e) {
+            System.out.println("Error: Couldn't create SSL context. " + e.getMessage());
+            System.exit(1);
+        }
     }
 
     private void createSensorKey() {
@@ -82,7 +104,24 @@ public class BackOffice {
     }
 
     private void createDatabaseConnection() {
-
+        ConnectionString connectionString = new ConnectionString(
+                "mongodb://backoffice:backoffice@192.168.0.100:27017/Users?ssl=true&sslInvalidCertificatesAllowed=true");
+        MongoClientSettings settings = MongoClientSettings.builder()
+                .applyToSslSettings(builder -> builder.enabled(true).context(this.sslContext))
+                .applyConnectionString(connectionString)
+                .serverApi(ServerApi.builder()
+                        .version(ServerApiVersion.V1)
+                        .build())
+                .build();
+        MongoClient mongoClient = MongoClients.create(settings);
+        MongoDatabase database = mongoClient.getDatabase("Users");
+        MongoCollection<Document> collection = database.getCollection("user_pass");
+        Document doc = collection.find().first();
+        if (doc != null) {
+            System.out.println(doc.toJson());
+        } else {
+            System.out.println("No matching documents found.");
+        }
     }
 
     HttpsServer createTLSServer(int port)
@@ -96,14 +135,6 @@ public class BackOffice {
             server = HttpsServer.create(address, 0);
         } catch (IOException e) {
             throw new TLSServerException("Error: Couldn't create server on requested port " + port + ".", e);
-        }
-
-        SSLContext sslContext = null;
-        try {
-            sslContext = TLS_SSL.createSSLContext(trustManagers, keyManagers);
-        } catch(NoSuchAlgorithmException | KeyManagementException e) {
-            System.out.println("Error: Couldn't create SSL context. " + e.getMessage());
-            System.exit(1);
         }
 
         // Set the SSL context for the backoffice server
