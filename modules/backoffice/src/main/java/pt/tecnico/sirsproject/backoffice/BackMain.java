@@ -38,7 +38,7 @@ public class BackMain {
             HttpsServer server = backoffice.createTLSServer(port);
             server.createContext("/test", new PingHandler());
             server.createContext("/auth", new AuthenticateHandler(backoffice.getManager(), backoffice.getMongoClient()));
-            server.createContext("/sensors", new BackHandlers.SensorKeyHandler(backoffice.getSensorKey(), backoffice.getManager()));
+            server.createContext("/sensors", new BackHandlers.SensorKeyHandler(backoffice.getSensorKey(), backoffice.getManager(), backoffice.getAccessControlManager()));
             server.setExecutor(null);
             System.out.println("Server started on port " + port + "!");
             server.start();
