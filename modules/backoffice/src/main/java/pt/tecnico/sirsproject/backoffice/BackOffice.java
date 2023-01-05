@@ -100,7 +100,7 @@ public class BackOffice {
         // Load properties file
         properties = new Properties();
         try {
-            properties.load(new FileInputStream("extra_files/backoffice/config.properties")); // TODO: Find a more reliable way of using relative paths
+            properties.load(new FileInputStream("../../extra_files/backoffice/config.properties")); // TODO: Find a more reliable way of using relative paths
         } catch (IOException e) {
             System.out.println("Error reading properties file: " + e.getMessage());
             System.exit(-1);
@@ -225,7 +225,7 @@ public class BackOffice {
         sensorKeyExecutor = Executors.newScheduledThreadPool(1);
         sensorKeyExecutor.scheduleAtFixedRate(sensorKeyRunnable, 10, 60, TimeUnit.SECONDS);
     }
-    
+
     public MongoClient getMongoClient() {
         return this.mongoClient;
     }

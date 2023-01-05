@@ -24,7 +24,7 @@ public class SensorKeyManager {
     private BigInteger g_root;
     private BigInteger a_secret;
     private BigInteger bigA;
-    private double bigB;
+    private BigInteger bigB;
     private final String sensors_ip;
     private final String sensors_port;
     private TrustManager[] trustManagers;
@@ -47,15 +47,16 @@ public class SensorKeyManager {
 
     public String createNewSensorKey() throws KeyManagementException, NoSuchAlgorithmException, IOException {
 
-        double newKey = executeDiffieHellman();
+        BigInteger newKey = executeDiffieHellman();
 
-        String finalSymmetricKey = String.valueOf(newKey);
+        String finalSymmetricKey = newKey.toString();
 
         return Base64.getEncoder().encodeToString(finalSymmetricKey.getBytes());
     }
 
-    private double executeDiffieHellman() throws NoSuchAlgorithmException, KeyManagementException, IOException {
+    private BigInteger executeDiffieHellman() throws NoSuchAlgorithmException, KeyManagementException, IOException {
 
+        System.out.println("==> Starting execution of Diffie-Helman!!");
         generateParameters();
 
         UpdateSensorsKeyRequest request = new UpdateSensorsKeyRequest(p_prime.toString(), g_root.toString(), bigA.toString());
@@ -75,8 +76,9 @@ public class SensorKeyManager {
         String response_clean = StringEscapeUtils.unescapeJava(response_json.replaceAll("^\"|\"$", ""));
         UpdateSensorsKeyResponse response = gson.fromJson(response_clean, UpdateSensorsKeyResponse.class);
         
-        bigB = Double.parseDouble(response.getBigB());
-        double newSecret = ((Math.pow(bigB, a_secret.doubleValue())) % p_prime.doubleValue());
+        bigB = new BigInteger(response.getBigB());
+        // double newSecret = ((Math.pow(bigB, a_secret.doubleValue())) % p_prime.doubleValue());
+        BigInteger newSecret = bigB.modPow(a_secret, p_prime);
         
         return newSecret;
     }
