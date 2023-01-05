@@ -7,6 +7,9 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 
+import pt.tecnico.sirsproject.security.RSAUtils;
+import pt.tecnico.sirsproject.security.TLS_SSL;
+
 import java.net.InetSocketAddress;
 
 import javax.crypto.*;
@@ -18,6 +21,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 import java.util.Properties;
 import java.util.Base64;
+import java.util.HashMap;
 
 import javax.net.ssl.*;
 
@@ -32,15 +36,16 @@ public class Sensors {
 
     private static KeyStore keystore;
     private Properties properties;
-    private KeyManagerFactory keyManager;
-    private TrustManagerFactory trustManager;
+    private KeyManager[] keyManagers;
+    private TrustManager[] trustManagers;
 
 //    private RSAService rsaService;
 
     public Sensors(String keystorePath) {
         loadProperties();
         loadKeyStore(keystorePath);
-        initializeKeyAndTrustManager();
+        setKeyManagers();
+        setTrustManagers();
 
         // rsaService = new RSAService();
 
@@ -53,6 +58,8 @@ public class Sensors {
     }
 
     public void updateCurrentKey(String newKey) {
+        System.out.println("==> New encoded key: " + newKey);
+        System.out.println("==> Random encoded key: " + Base64.getEncoder().encodeToString(createAESKey().getEncoded()));
         byte[] decoded_key = Base64.getDecoder().decode(newKey);
         currentKey = new SecretKeySpec(decoded_key, 0, decoded_key.length, "AES");
     }
@@ -80,19 +87,21 @@ public class Sensors {
         }
     }
 
-    private void initializeKeyAndTrustManager() {
-        String password = properties.getProperty("keystore_pass");
-        char[] pass = password.toCharArray();
+    private void setTrustManagers() {
+        HashMap<String, String> certificate_paths = new HashMap<>();
+        // Insert here all the necessary certificates for the Client
+        certificate_paths.put("Backoffice_certificate", "../../extra_files/sensors/outside_certificates/BackofficeCertificate.pem");
+        certificate_paths.put("Client_certificate", "../../extra_files/sensors/outside_certificates/ClientCertificate.pem");
 
-        // Initialize the key and trust manager factories
-        try {
-            keyManager = KeyManagerFactory.getInstance("SunX509");
-            trustManager = TrustManagerFactory.getInstance("SunX509");
-            keyManager.init(keystore, pass);
-            trustManager.init(keystore);
-        } catch (NoSuchAlgorithmException | KeyStoreException | UnrecoverableKeyException e) {
-            System.out.println("Error: Couldn't initialize key or trust manager factory " + e.getMessage());
-        }
+        KeyStore keystoreCertificates = RSAUtils.loadKeyStoreCertificates(certificate_paths);
+        this.trustManagers = RSAUtils.loadTrustManagers(keystoreCertificates);
+    }
+
+    private void setKeyManagers() {
+        String keystore_password = properties.getProperty("keystore_pass");
+        char[] pass = keystore_password.toCharArray();
+
+        this.keyManagers = RSAUtils.loadKeyManagers(keystore, pass);
     }
 
     HttpsServer createTLSServer(int port)
@@ -109,23 +118,16 @@ public class Sensors {
         }
 
         // Initialize the SSL context
-        SSLContext context;
+        SSLContext sslContext = null;
         try {
-            context = SSLContext.getInstance("TLS");
-        } catch (NoSuchAlgorithmException e) {
-            throw new TLSServerException("Error: Couldn't find requested SSL Context algorithm.", e);
-        }
-
-
-        // Initialize the SSL context with the key and trust managers
-        try {
-            context.init(keyManager.getKeyManagers(), trustManager.getTrustManagers(), null);
-        } catch (KeyManagementException e) {
-            throw new TLSServerException("Error: Unable to initialize SSL context.", e);
+            sslContext = TLS_SSL.createSSLContext(trustManagers, keyManagers);
+        } catch(NoSuchAlgorithmException | KeyManagementException e) {
+            System.out.println("Error: Couldn't create SSL context. " + e.getMessage());
+            System.exit(1);
         }
 
         // Set the SSL context for the backoffice server
-        server.setHttpsConfigurator(new HttpsConfigurator(context) {
+        server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
             public void configure(HttpsParameters params) {
                 try {
                     SSLContext sslcontext = SSLContext.getDefault();
