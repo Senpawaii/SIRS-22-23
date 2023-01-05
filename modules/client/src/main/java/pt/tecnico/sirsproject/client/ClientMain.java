@@ -26,8 +26,6 @@ public class ClientMain {
                                     break selectionMenu;
                                 }
                             }
-                            System.out.println("A1");
-                            break;
                         case "A2": // Query stock
                             System.out.println("A2");
                             break;
