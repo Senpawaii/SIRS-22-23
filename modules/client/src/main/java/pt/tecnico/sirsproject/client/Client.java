@@ -101,9 +101,8 @@ public class Client {
 
         String sensorKey = sensorResponse.getSymmetricKey();
 
-        if(sensorKey.isEmpty()) { // TODO: Validate that this is how the server tells the client that the token is invalid!
+        if(sensorKey.equals("None")) {
             String cause = sensorResponse.getExtra_message();
-            System.out.println("cause: " + cause);
             throw new Exception(cause);
         }
         this.sensorKey = new SensorKey(sensorKey);

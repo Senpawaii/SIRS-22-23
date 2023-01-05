@@ -18,7 +18,7 @@ public class ClientMain {
                             try{
                                 client.obtainSensorKey();
                             } catch (Exception e) {
-                                System.out.println("Exception caught: " + e.getMessage());
+                                System.out.println(e.getMessage());
                                 break selectionMenu;
                             }
                             System.out.println("A1");
