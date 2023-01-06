@@ -68,7 +68,7 @@ public class SymmetricKeyEncryption {
             unencrypted_data = new String(aes_cipher.doFinal(decodedData),
                     StandardCharsets.UTF_8);
         } catch(Exception e) {
-            System.out.println("Error: " + e.getMessage());
+            System.out.println("Decryption Error: " + e.getMessage());
         }
         return unencrypted_data;
     }

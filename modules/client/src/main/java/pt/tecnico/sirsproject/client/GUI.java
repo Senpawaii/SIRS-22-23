@@ -12,6 +12,10 @@ public class GUI {
         System.out.println();
     }
 
+    private static void printInputPrompt() {
+        System.out.print("> ");
+    }
+
     public static String[] authenticationPrompt() {
         System.out.println("Please authenticate yourself: ");
         String username = InputSecurity.getUsername(sc);
@@ -29,6 +33,7 @@ public class GUI {
             System.out.println("3 - Contact Actuators/Sensors");
             System.out.println("4 - Quit");
             System.out.println();
+            printInputPrompt();
             String command = sc.nextLine();
             switch (command) {
                 case "1":
@@ -47,7 +52,7 @@ public class GUI {
                         command = printFrontofficeMenu(sc);
                         if (command.equals("1") || command.equals("2")) {
                             return "B" + command;
-                        } else if (command.equals("4")) {
+                        } else if (command.equals("3")) {
                             break;
                         }
                         System.out.println("Please insert a valid command.");
@@ -86,6 +91,7 @@ public class GUI {
         System.out.println("3 - Buy Parts");
         System.out.println("4 - Back");
         System.out.println();
+        printInputPrompt();
         return sc.nextLine();
     }
 
@@ -97,6 +103,7 @@ public class GUI {
         System.out.println("1 - Request Info");
         System.out.println("2 - Back");
         System.out.println();
+        printInputPrompt();
         return sc.nextLine();
     }
     
@@ -107,8 +114,9 @@ public class GUI {
         System.out.println();
         System.out.println("1 - Request public information");
         System.out.println("2 - Request private information");
-        System.out.println("4 - Back");
+        System.out.println("3 - Back");
         System.out.println();
+        printInputPrompt();
         return sc.nextLine();
     }
 }

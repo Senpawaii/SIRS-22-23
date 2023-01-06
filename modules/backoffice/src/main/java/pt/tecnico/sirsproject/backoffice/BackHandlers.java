@@ -1,5 +1,6 @@
 package pt.tecnico.sirsproject.backoffice;
 
+import com.google.gson.Gson;
 import com.mongodb.client.MongoClient;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -68,6 +69,7 @@ public class BackHandlers {
                 credentials_request = RequestParsing.parseCredentialsRequestToJSON(sx);
             } catch(IOException e) {
                 System.out.println("Error: Couldn't parse Credentials Request to JSON format. " + e.getMessage());
+                sx.sendResponseHeaders(400, -1);
                 return;
             }
 
@@ -126,7 +128,7 @@ public class BackHandlers {
             HttpsExchange sx = (HttpsExchange) ex;
             String requestMethod = sx.getRequestMethod();
             if (!requestMethod.equals("POST")) {
-                //ERROR case
+                sx.sendResponseHeaders(405, -1);
                 return;
             }
 
@@ -135,6 +137,7 @@ public class BackHandlers {
                 sensorKey_request = RequestParsing.parseSensorKeyRequestToJSON(sx);
             } catch(IOException exception) {
                 System.out.println(exception.getMessage());
+                sx.sendResponseHeaders(400, -1);
                 return;
             }
 
@@ -163,16 +166,51 @@ public class BackHandlers {
         }
     }
 
-    // public static class SensorAuthHandler implements HttpHandler {
-    //     private BackOffice
-    //     @Override
-    //     public void handle(HttpExchange x) throws IOException {
-            
-            
-    //     }
+    public static class SensorAuthHandler implements HttpHandler {
+        private BackOffice backoffice;
+        private final SessionManager sessionManager;
+        private final AccessControlManager accessControlManager;
+
+        public SensorAuthHandler(BackOffice backoffice) {
+            this.backoffice = backoffice;
+            this.sessionManager = backoffice.getManager();
+            this.accessControlManager = backoffice.getAccessControlManager();
+        }
+
+        @Override
+        public void handle(HttpExchange x) throws IOException {
+            HttpsExchange sx = (HttpsExchange) x;
+            String requestMethod = sx.getRequestMethod();
+            if (!requestMethod.equals("POST")) {
+                sx.sendResponseHeaders(405, -1);
+                return;
+            }
+
+            UserAuthenticatedRequest authenticationRequest;
+            try {
+                authenticationRequest = RequestParsing.parseUserAuthenticatedRequestToJSON(sx);
+            } catch(IOException exception) {
+                System.out.println(exception.getMessage());
+                sx.sendResponseHeaders(400, -1);
+                return;
+            }
+
+            assert authenticationRequest != null;
+            String username = authenticationRequest.getUsername();
+            String token = authenticationRequest.getSession_token();
+
+            // check if credentials are correct and access level is high enough
+            boolean accessAllowed = validate_session(username, token, sessionManager) && 
+                                        accessControlManager.hasAccess(username, AccessControlManager.ACCESS_LEVEL_ENGINEER);
+
+            UserAuthenticatedResponse response = new UserAuthenticatedResponse(accessAllowed);
+            Gson gson = new Gson();
+            String json = gson.toJson(response);
+            sendResponse(sx, 200, json);
+        }
         
-    // }
-    
+    }
+
     public static class FrontAuthenticationHandler implements HttpHandler {
         private final SessionManager manager;
 
@@ -185,7 +223,7 @@ public class BackHandlers {
             HttpsExchange sx = (HttpsExchange) ex;
             String requestMethod = sx.getRequestMethod();
             if (!requestMethod.equals("POST")) {
-                //ERROR case
+                sx.sendResponseHeaders(405, -1);
                 return;
             }
 
@@ -194,6 +232,7 @@ public class BackHandlers {
                 authenticationRequest = RequestParsing.parseUserAuthenticatedRequestToJSON(sx);
             } catch(IOException exception) {
                 System.out.println(exception.getMessage());
+                sx.sendResponseHeaders(400, -1);
                 return;
             }
 

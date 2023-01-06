@@ -61,7 +61,7 @@ public class FrontHandlers {
             HttpsExchange sx = (HttpsExchange) ex;
             String requestMethod = sx.getRequestMethod();
             if (!requestMethod.equals("POST")) {
-                //ERROR case
+                sx.sendResponseHeaders(405, -1);
                 return;
             }
 
@@ -70,6 +70,7 @@ public class FrontHandlers {
                 publicInfoRequest = RequestParsing.parsePublicInfoRequestToJSON(sx);
             } catch(IOException exception) {
                 System.out.println(exception.getMessage());
+                sx.sendResponseHeaders(400, -1);
                 return;
             }
 
@@ -124,6 +125,11 @@ public class FrontHandlers {
 
         String response = connect_to_backoffice(request, "POST", "/frontAuthentication",
                 backoffice_address, backoffice_port, trustManagers);
+
+        if (response.startsWith("Http Error")) {
+            System.out.println(response);
+            return false;
+        }
 
         UserAuthenticatedResponse authenticationResponse = gson.fromJson(response, UserAuthenticatedResponse.class);
 

@@ -18,6 +18,8 @@ public class ClientMain {
                         case "A1": // Ask for symmetric key to use with Sensors/ Actuators
                             try{
                                 client.obtainSensorKey();
+                                System.out.println("Sensor key obtained.");
+                                break;
                             } catch (Exception e) {
                                 System.out.println(e.getMessage());
                                 if(e.getMessage().equals("You do not have enough clearance to access this.")) {

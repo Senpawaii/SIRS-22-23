@@ -97,6 +97,11 @@ public class SensorKeyManager {
             return null;
         }
 
+        if (response_json.startsWith("Http Error:")) {
+            System.out.println(response_json);
+            return null;
+        }
+
         try {
             JSONObject response = new JSONObject(response_json);
             byte[] sensorsPubKeyEnc = Base64.getDecoder().decode(response.getString("sensors_pub_key"));

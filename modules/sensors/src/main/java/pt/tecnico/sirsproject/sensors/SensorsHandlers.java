@@ -197,19 +197,29 @@ public class SensorsHandlers {
             String username = SymmetricKeyEncryption.decrypt(encryptedUsername, currentKey, iv);
             String token = SymmetricKeyEncryption.decrypt(encryptedToken, currentKey, iv);
 
-            //TODO: validate with backoffice
-
-            String content = String.format("Hello from the Sensors/Actuators, engineer %s (with token %s).", username, token);
-            String encryptedContent = SymmetricKeyEncryption.encrypt(content, currentKey, _ivContainer, true);
-            String encodedIV = Base64.getEncoder().encodeToString(iv);
-            
-            ClientSensorsResponse response = new ClientSensorsResponse(encryptedContent, encodedIV);
             Gson gson = new Gson();
-            String response_json = gson.toJson(response);
+            UserAuthenticatedResponse accessResponse = null;
+            try {
+                accessResponse = sensors.authenticateClient(username, token);
+            } catch (KeyManagementException | NoSuchAlgorithmException e) {
+                sx.sendResponseHeaders(503, -1);
+                return;
+            }
 
-            sendResponse(sx, 200, response_json);
+            if (accessResponse != null && accessResponse.isAuthenticated()) {
+                String content = String.format("Hello from the Sensors/Actuators, engineer %s (with token %s).", username, token);
+                String encryptedContent = SymmetricKeyEncryption.encrypt(content, currentKey, _ivContainer, true);
+                String encodedIV = Base64.getEncoder().encodeToString(iv);
+                
+                ClientSensorsResponse response = new ClientSensorsResponse(encryptedContent, encodedIV);
+                String response_json = gson.toJson(response);
 
-            sensors.logClientRequest(username);
+                sendResponse(sx, 200, response_json);
+            } else {
+                sx.sendResponseHeaders(403, -1);
+            }
+
+            sensors.logClientRequest(username, accessResponse.isAuthenticated());
         }
         
     }

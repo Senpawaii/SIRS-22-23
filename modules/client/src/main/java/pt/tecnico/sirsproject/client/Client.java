@@ -27,7 +27,7 @@ public class Client {
     private final String frontoffice_port;
     private String token;
     private TrustManager[] trustManagers;
-    private SensorKey sensorKey;
+    private SensorKey sensorKey = null;
 
     public Client() {
         loadPropertiesFile();
@@ -83,6 +83,11 @@ public class Client {
         String response_json = ClientCommunications.connect_to_backoffice(request, "POST", "/auth",
                 this.backoffice_address, this.backoffice_port, this.trustManagers);
 
+        if (response_json.startsWith("Http Error")) {
+            System.out.println(response_json);
+            return false;
+        }
+
         CredentialsResponse response = gson.fromJson(response_json, CredentialsResponse.class);
         if(response != null) {
             String token = response.getToken();
@@ -107,6 +112,11 @@ public class Client {
         String response = ClientCommunications.connect_to_backoffice(request, "POST", "/sensors",
                 this.backoffice_address, this.backoffice_port, this.trustManagers);
 
+        if (response.startsWith("Http Error")) {
+            System.out.println(response);
+            return;
+        }
+
         SensorKeyResponse sensorResponse = gson.fromJson(response, SensorKeyResponse.class);
 
         String sensorKey_b64 = sensorResponse.getSymmetricKey();
@@ -120,6 +130,13 @@ public class Client {
     }
 
     public void accessSensors() {
+
+        // check if client currently has sensor key
+        if (this.sensorKey == null) {
+            System.out.println("Error: You currently do not have a sensor key. Please request one and try again.");
+            return;
+        }
+
         Gson gson = new Gson();
 
         Container<byte[]> _ivContainer = new Container<>();
@@ -136,6 +153,11 @@ public class Client {
 
         String response_json = ClientCommunications.connect_to_sensors(json, "GET", "/getinfo", 
                             this.sensors_address, this.sensors_port, trustManagers);
+        
+        if (response_json.startsWith("Http Error")) {
+            System.out.println(response_json);
+            return;
+        }
 
         ClientSensorsResponse response = gson.fromJson(response_json, ClientSensorsResponse.class);
         String encryptedContent = response.getContent();
@@ -156,6 +178,11 @@ public class Client {
 
         String response = ClientCommunications.connect_to_frontoffice(request, "POST", "/public",
                 this.frontoffice_address, this.frontoffice_port, this.trustManagers);
+
+        if (response.startsWith("Http Error")) {
+            System.out.println(response);
+            return;
+        }
 
         PublicInfoResponse infoResponse = gson.fromJson(response, PublicInfoResponse.class);
 

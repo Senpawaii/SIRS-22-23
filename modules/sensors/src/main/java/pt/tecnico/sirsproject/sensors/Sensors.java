@@ -6,7 +6,7 @@ import org.bouncycastle.util.io.pem.PemReader;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
-
+import com.google.gson.Gson;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ServerApi;
@@ -16,8 +16,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
-import pt.tecnico.sirsproject.security.RSAUtils;
-import pt.tecnico.sirsproject.security.TLS_SSL;
+import pt.tecnico.sirsproject.security.*;
 
 import java.net.InetSocketAddress;
 
@@ -80,6 +79,14 @@ public class Sensors {
             System.out.println("Error reading properties file: " + e.getMessage());
             System.exit(-1);
         }
+    }
+
+    private String getBackOfficeAddress() {
+        return properties.getProperty("backoffice_ip_address");
+    }
+
+    private String getBackOfficePort() {
+        return properties.getProperty("backoffice_port");
     }
 
     private void loadKeyStore(String keystore_path) {
@@ -169,13 +176,40 @@ public class Sensors {
 
     }
 
-    public void logClientRequest(String username) {
-        System.out.println("==> Logging client request (dummy)");
+    public void logClientRequest(String username, boolean success) {
+
         // here you send the log to the database
+        //TODO: send these messages to the database
+        if (success) {
+            System.out.println(String.format("==> Logging: User %s accessed the sensors with success.", username));
+        } else {
+            System.out.println(String.format("==> Logging: User %s tried to access the sensors without success.", username));
+        }
     }
 
     public MongoClient getMongoClient() {
         return this.mongoClient;
+    }
+
+    public UserAuthenticatedResponse authenticateClient(String username, String token) throws KeyManagementException, NoSuchAlgorithmException, IOException {
+        UserAuthenticatedRequest authReq = new UserAuthenticatedRequest(username, token);
+        Gson gson = new Gson();
+        String auth_json = gson.toJson(authReq);
+        String accessResponse = "";
+        try {
+            accessResponse = SendRequest.sendRequest(getBackOfficeAddress(), getBackOfficePort(), auth_json, "POST", "/sensorsauth", this.trustManagers);
+        } catch (KeyManagementException | NoSuchAlgorithmException | IOException e) {
+            System.out.println("Unable to authenticate client.");
+            throw e;
+        }
+
+        if (accessResponse.startsWith("Http Error")) {
+            System.out.println(accessResponse);
+            return null;
+        }
+
+        UserAuthenticatedResponse response = gson.fromJson(accessResponse, UserAuthenticatedResponse.class);
+        return response;
     }
 
     public SecretKey createAESKey(byte[] seed) {

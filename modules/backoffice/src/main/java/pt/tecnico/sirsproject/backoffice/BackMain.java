@@ -1,8 +1,7 @@
 package pt.tecnico.sirsproject.backoffice;
 
 import com.sun.net.httpserver.HttpsServer;
-import pt.tecnico.sirsproject.backoffice.BackHandlers.AuthenticateHandler;
-import pt.tecnico.sirsproject.backoffice.BackHandlers.PingHandler;
+import pt.tecnico.sirsproject.backoffice.BackHandlers.*;
 
 import java.io.File;
 
@@ -38,8 +37,9 @@ public class BackMain {
             HttpsServer server = backoffice.createTLSServer(port);
             server.createContext("/test", new PingHandler());
             server.createContext("/auth", new AuthenticateHandler(backoffice.getManager(), backoffice.getMongoClient()));
-            server.createContext("/sensors", new BackHandlers.SensorKeyHandler(backoffice, backoffice.getAccessControlManager()));
-            server.createContext("/frontAuthentication", new BackHandlers.FrontAuthenticationHandler(backoffice.getManager()));
+            server.createContext("/sensors", new SensorKeyHandler(backoffice, backoffice.getAccessControlManager()));
+            server.createContext("/frontAuthentication", new FrontAuthenticationHandler(backoffice.getManager()));
+            server.createContext("/sensorsauth", new SensorAuthHandler(backoffice));
             server.setExecutor(null);
             System.out.println("Server started on port " + port + "!");
             server.start();

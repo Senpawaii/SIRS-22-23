@@ -71,8 +71,20 @@ public class SendRequest {
             in.close();
 
             // Print the response
-            System.out.println(response);
+            // System.out.println(response);
             return new String(response);
+        }
+
+        // error codes
+        switch (con.getResponseCode()) {
+            case 503:
+                return "Http Error: 503 Unavailable";
+            case 405:
+                return "Http Error: 405 Worng Method";
+            case 403:
+                return "Http Error: 403 Forbidden";
+            case 400:
+                return "Http Error: 400 Bad Request";
         }
 
         return "";
