@@ -65,9 +65,9 @@ public class FrontHandlers {
                 return;
             }
 
-            PublicInfoRequest publicInfoRequest;
+            InfoRequest publicInfoRequest;
             try {
-                publicInfoRequest = RequestParsing.parsePublicInfoRequestToJSON(sx);
+                publicInfoRequest = RequestParsing.parseInfoRequestToJSON(sx);
             } catch(IOException exception) {
                 System.out.println(exception.getMessage());
                 return;
@@ -88,6 +88,57 @@ public class FrontHandlers {
             } else {
                 response.put("stats", "None");
                 response.put("shifts", "None");
+                response.put("extra_message", "Invalid credentials.");
+                sendResponse(sx, 200, response.toString());
+            }
+        }
+    }
+
+    public static class PrivateInfoHandler implements HttpHandler {
+        private final String backoffice_address;
+        private final String backoffice_port;
+        private final TrustManager[] trustManagers;
+
+        public PrivateInfoHandler(String backoffice_address, String backoffice_port, TrustManager[] trustManagers) {
+            this.backoffice_address = backoffice_address;
+            this.backoffice_port = backoffice_port;
+            this.trustManagers = trustManagers;
+        }
+
+        @Override
+        public void handle(HttpExchange ex) throws IOException {
+            HttpsExchange sx = (HttpsExchange) ex;
+            String requestMethod = sx.getRequestMethod();
+            if (!requestMethod.equals("POST")) {
+                //ERROR case
+                return;
+            }
+
+            InfoRequest privateInfoRequest;
+            try {
+                privateInfoRequest = RequestParsing.parseInfoRequestToJSON(sx);
+            } catch(IOException exception) {
+                System.out.println(exception.getMessage());
+                return;
+            }
+
+            // Verify session token
+            assert privateInfoRequest != null;
+            String sessionToken = privateInfoRequest.getSession_token();
+            String username = privateInfoRequest.getUsername();
+
+            JSONObject response = new JSONObject();
+            if(validate_session(username, sessionToken, 
+                backoffice_address, backoffice_port, trustManagers)) {
+                response.put("salary", "1000");
+                response.put("absentWorkingDays", "10");
+                response.put("parentalLeaves", "10");
+                System.out.println("PrivateInfo Request: " + username);
+                sendResponse(sx, 200, response.toString());
+            } else {
+                response.put("salary", "None");
+                response.put("absentWorkingDays", "None");
+                response.put("parentalLeaves", "None");
                 response.put("extra_message", "Invalid credentials.");
                 sendResponse(sx, 200, response.toString());
             }

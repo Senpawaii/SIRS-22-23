@@ -3,6 +3,7 @@ package pt.tecnico.sirsproject.frontoffice;
 import com.sun.net.httpserver.HttpsServer;
 import pt.tecnico.sirsproject.frontoffice.FrontHandlers.PingHandler;
 import pt.tecnico.sirsproject.frontoffice.FrontHandlers.PublicInfoHandler;
+import pt.tecnico.sirsproject.frontoffice.FrontHandlers.PrivateInfoHandler;
 
 import java.io.File;
 
@@ -37,7 +38,8 @@ public class FrontMain {
             server.createContext("/test", new PingHandler());
             server.createContext("/public", new PublicInfoHandler(frontoffice.getBackofficeAddr(), frontoffice.getBackofficePort(), 
                 frontoffice.getTrustManagers()));
-            //server.createContext("/private", new PrivateInfoHandler());
+            server.createContext("/private", new PrivateInfoHandler(frontoffice.getBackofficeAddr(), frontoffice.getBackofficePort(), 
+                frontoffice.getTrustManagers()));
             server.setExecutor(null);
             System.out.println("Server started on port " + port + "!");
             server.start();

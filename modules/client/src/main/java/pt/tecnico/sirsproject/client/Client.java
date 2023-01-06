@@ -151,7 +151,7 @@ public class Client {
     public void obtainPublicInfo() throws Exception {
         Gson gson = new Gson();
 
-        PublicInfoRequest gson_object = new PublicInfoRequest(this.username, this.token);
+        InfoRequest gson_object = new InfoRequest(this.username, this.token);
         String request = gson.toJson(gson_object);
 
         String response = ClientCommunications.connect_to_frontoffice(request, "POST", "/public",
@@ -167,6 +167,31 @@ public class Client {
             throw new Exception(cause);
         } else {
             System.out.println("Stats: " + stats + ", Shifts: " + shifts);
+        }
+    }
+
+    public void obtainPrivateInfo() throws Exception {
+        Gson gson = new Gson();
+
+        InfoRequest gson_object = new InfoRequest(this.username, this.token);
+        String request = gson.toJson(gson_object);
+
+        String response = ClientCommunications.connect_to_frontoffice(request, "POST", "/private",
+                this.frontoffice_address, this.frontoffice_port, this.trustManagers);
+
+        PrivateInfoResponse infoResponse = gson.fromJson(response, PrivateInfoResponse.class);
+
+        String salary = infoResponse.getSalary();
+        String absentWorkingDays = infoResponse.getAbsentWorkingDays();
+        String parentalLeaves = infoResponse.getParentalLeaves();
+
+        if(salary.equals("None") || absentWorkingDays.equals("None") || 
+            parentalLeaves.equals("None")) {
+            String cause = infoResponse.getExtra_message();
+            throw new Exception(cause);
+        } else {
+            System.out.println("Salary: " + salary + ", Absent Working Days: " + absentWorkingDays + 
+            ", Parental Leaves: " + parentalLeaves);
         }
     }
 

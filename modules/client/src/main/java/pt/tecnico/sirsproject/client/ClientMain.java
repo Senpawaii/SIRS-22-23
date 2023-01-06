@@ -43,7 +43,11 @@ public class ClientMain {
                             }
                             break;
                         case "B2": // Request private information
-                            System.out.println("B2");
+                            try{
+                                client.obtainPrivateInfo();
+                            } catch (Exception e) {
+                                System.out.println(e.getMessage());
+                            }
                             break;
                         case "4":
                             System.out.println("Exiting...");

@@ -67,14 +67,14 @@ public class RequestParsing {
         return null;
     }
 
-    public static PublicInfoRequest parsePublicInfoRequestToJSON(HttpsExchange exc) throws IOException {
+    public static InfoRequest parseInfoRequestToJSON(HttpsExchange exc) throws IOException {
         InputStreamReader isr = new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8);
         BufferedReader br = new BufferedReader(isr);
         String requestBody = removeQuotesAndUnescape(br.readLine());
 
         Gson gson = new Gson();
         try {
-            return gson.fromJson(requestBody, PublicInfoRequest.class);
+            return gson.fromJson(requestBody, InfoRequest.class);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
