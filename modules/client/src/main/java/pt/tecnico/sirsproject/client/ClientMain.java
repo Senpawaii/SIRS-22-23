@@ -36,7 +36,11 @@ public class ClientMain {
                             client.accessSensors();
                             break;
                         case "B1": // Request public information
-                            System.out.println("B1");
+                            try{
+                                client.obtainPublicInfo();
+                            } catch (Exception e) {
+                                System.out.println(e.getMessage());
+                            }
                             break;
                         case "B2": // Request private information
                             System.out.println("B2");

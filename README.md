@@ -7,7 +7,7 @@ Project developed for the course of SIRS - 22/23
 |----------------|---------------|----------------------------------------|
 | 92496          | João Queirós  | joao.miguel.queiros@tecnico.ulisboa.pt |
 | 92564          | Tomás Saraiva | tomas.a.saraiva@tecnico.ulisboa.pt     |
-| 90115          | João Ivo      |         ?                              |
+| 90115          | João Ivo      |         ivo.jivo.99@gmail.com                              |
 
 <h2 align="center">Industry: StarDrive - Delivering a security based solutionfor an automotive company
 

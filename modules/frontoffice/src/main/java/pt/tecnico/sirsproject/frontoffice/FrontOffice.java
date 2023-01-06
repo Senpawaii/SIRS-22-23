@@ -32,15 +32,18 @@ import static com.mongodb.client.model.Filters.eq;
 public class FrontOffice {
     private static KeyStore keystore;
     private Properties properties;
+    private final String backoffice_address;
+    private final String backoffice_port;
     private TrustManager[] trustManagers;
     private KeyManager[] keyManagers;
-    private final SessionManager manager = new SessionManager();
     private SSLContext sslContext;
     private MongoClient mongoClient; 
 
 
     public FrontOffice(String keystorePath) {
     	loadProperties();
+        this.backoffice_address = properties.getProperty("backoffice_ip_address");
+        this.backoffice_port = properties.getProperty("backoffice_port");
     	loadKeyStore(keystorePath);
     	setTrustManagers();
         setKeyManagers();
@@ -48,20 +51,13 @@ public class FrontOffice {
         
         // TODO: uncomment
         //createDatabaseConnection(); 
-        //populateDB();
-    }
-
-    // This method is used only for demonstration of the project
-    private void populateDB() {
-        String[] usernames = {"Client1", "Client2", "Client3"};
-        String[] passwords = {"client1_pass", "client2_pass"};
-        DatabaseCommunications.populateDBUsers(usernames, passwords,mongoClient);
     }
 
     private void setTrustManagers() {
         HashMap<String, String> certificate_paths = new HashMap<>();
         // Insert here all the necessary certificates for the Client
         certificate_paths.put("Client_certificate", "../../extra_files/frontoffice/outside_certificates/ClientCertificate.pem");
+        certificate_paths.put("Client_certificate", "../../extra_files/frontoffice/outside_certificates/BackofficeCertificate.pem");
         certificate_paths.put("Mongo_certificate", "../../extra_files/frontoffice/outside_certificates/MongoDBCertificate.pem");
 
         KeyStore keystoreCertificates = RSAUtils.loadKeyStoreCertificates(certificate_paths);
@@ -181,11 +177,19 @@ public class FrontOffice {
         return SymmetricKeyEncryption.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
     }
 
-    public SessionManager getManager() {
-        return this.manager;
-    }
-
     public MongoClient getMongoClient() {
         return this.mongoClient;
+    }
+
+    public String getBackofficeAddr() {
+        return this.backoffice_address;
+    }
+
+    public String getBackofficePort() {
+        return this.backoffice_port;
+    }
+
+    public TrustManager[] getTrustManagers() {
+        return this.trustManagers;
     }
 }

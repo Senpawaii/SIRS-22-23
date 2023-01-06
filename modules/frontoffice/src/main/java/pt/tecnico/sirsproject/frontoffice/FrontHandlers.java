@@ -7,9 +7,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import javax.net.ssl.TrustManager;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
 
+import com.google.gson.Gson;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -40,6 +45,55 @@ public class FrontHandlers {
         }
     }
 
+    public static class PublicInfoHandler implements HttpHandler {
+        private final String backoffice_address;
+        private final String backoffice_port;
+        private final TrustManager[] trustManagers;
+
+        public PublicInfoHandler(String backoffice_address, String backoffice_port, TrustManager[] trustManagers) {
+            this.backoffice_address = backoffice_address;
+            this.backoffice_port = backoffice_port;
+            this.trustManagers = trustManagers;
+        }
+
+        @Override
+        public void handle(HttpExchange ex) throws IOException {
+            HttpsExchange sx = (HttpsExchange) ex;
+            String requestMethod = sx.getRequestMethod();
+            if (!requestMethod.equals("POST")) {
+                //ERROR case
+                return;
+            }
+
+            PublicInfoRequest publicInfoRequest;
+            try {
+                publicInfoRequest = RequestParsing.parsePublicInfoRequestToJSON(sx);
+            } catch(IOException exception) {
+                System.out.println(exception.getMessage());
+                return;
+            }
+
+            // Verify session token
+            assert publicInfoRequest != null;
+            String sessionToken = publicInfoRequest.getSession_token();
+            String username = publicInfoRequest.getUsername();
+
+            JSONObject response = new JSONObject();
+            if(validate_session(username, sessionToken, 
+                backoffice_address, backoffice_port, trustManagers)) {
+                response.put("stats", "These are the stats");
+                response.put("shifts", "These are the shifts");
+                System.out.println("PublicInfo Request: " + username);
+                sendResponse(sx, 200, response.toString());
+            } else {
+                response.put("stats", "None");
+                response.put("shifts", "None");
+                response.put("extra_message", "Invalid credentials.");
+                sendResponse(sx, 200, response.toString());
+            }
+        }
+    }
+
     public static void sendResponse(HttpsExchange x, int statusCode, String responseBody) throws IOException {
         // TODO: Handle IOException
         x.sendResponseHeaders(statusCode, responseBody.getBytes().length);
@@ -48,5 +102,34 @@ public class FrontHandlers {
         out.close();
     }
 
+    public static String connect_to_backoffice(String request, String requestType, String handler, String address,
+                                               String port, TrustManager[] trustManagers) {
+        System.out.println("Connecting to BackOffice on address " + address + " and port: " + port + "...");
+        String result = "";
+        try {
+            result = SendRequest.sendRequest(address, port, request, requestType, handler, trustManagers);
+        } catch (NoSuchAlgorithmException | KeyManagementException | IOException e) {
+            System.out.println("Error: Failed to connect to the BackOffice.");
+            System.exit(1);
+        }
+        return result;
+    }
+
+    private static boolean validate_session(String username, String sessionToken, String backoffice_address, 
+        String backoffice_port, TrustManager[] trustManagers) {
+        Gson gson = new Gson();
+
+        UserAuthenticatedRequest gson_object = new UserAuthenticatedRequest(username, sessionToken);
+        String request = gson.toJson(gson_object);
+
+        String response = connect_to_backoffice(request, "POST", "/frontAuthentication",
+                backoffice_address, backoffice_port, trustManagers);
+
+        UserAuthenticatedResponse authenticationResponse = gson.fromJson(response, UserAuthenticatedResponse.class);
+
+        Boolean authenticated = authenticationResponse.isAuthenticated();
+
+        return authenticated;
+    }
     /* Add the other possible handlers the frontoffice might have here */
 }

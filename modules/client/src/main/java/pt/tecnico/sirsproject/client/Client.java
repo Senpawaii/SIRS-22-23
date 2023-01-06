@@ -134,6 +134,28 @@ public class Client {
         }
     }
 
+    public void obtainPublicInfo() throws Exception {
+        Gson gson = new Gson();
+
+        PublicInfoRequest gson_object = new PublicInfoRequest(this.username, this.token);
+        String request = gson.toJson(gson_object);
+
+        String response = ClientCommunications.connect_to_frontoffice(request, "POST", "/public",
+                this.frontoffice_address, this.frontoffice_port, this.trustManagers);
+
+        PublicInfoResponse infoResponse = gson.fromJson(response, PublicInfoResponse.class);
+
+        String stats = infoResponse.getStats();
+        String shifts = infoResponse.getShifts();
+
+        if(stats.equals("None") || shifts.equals("None")) {
+            String cause = infoResponse.getExtra_message();
+            throw new Exception(cause);
+        } else {
+            System.out.println("Stats: " + stats + ", Shifts: " + shifts);
+        }
+    }
+
     public String getUsername() {
         return username;
     }

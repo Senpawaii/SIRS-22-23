@@ -39,6 +39,7 @@ public class BackMain {
             server.createContext("/test", new PingHandler());
             server.createContext("/auth", new AuthenticateHandler(backoffice.getManager(), backoffice.getMongoClient()));
             server.createContext("/sensors", new BackHandlers.SensorKeyHandler(backoffice, backoffice.getAccessControlManager()));
+            server.createContext("/frontAuthentication", new BackHandlers.FrontAuthenticationHandler(backoffice.getManager()));
             server.setExecutor(null);
             System.out.println("Server started on port " + port + "!");
             server.start();
