@@ -1,10 +1,10 @@
 package pt.tecnico.sirsproject.security;
 
-public class PublicInfoRequest extends Request{
+public class InfoRequest extends Request{
     private final String session_token;
     private final String username;
 
-    public PublicInfoRequest(String username, String session_token) {
+    public InfoRequest(String username, String session_token) {
         this.session_token = session_token;
         this.username = username;
     }

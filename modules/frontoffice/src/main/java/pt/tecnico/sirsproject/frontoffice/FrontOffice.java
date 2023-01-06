@@ -48,8 +48,6 @@ public class FrontOffice {
     	setTrustManagers();
         setKeyManagers();
         setSSLContext();
-        
-        // TODO: uncomment
         //createDatabaseConnection(); 
     }
 
@@ -150,32 +148,6 @@ public class FrontOffice {
 
     	return server;
     }
-
-    byte[] decryptWithRSA(byte[] request) {
-        String password = properties.getProperty("keystore_pass");
-        char[] pass = password.toCharArray();
-
-        byte[] decryptedRequest = new byte[0];
-        try {
-            // Load Private Key
-            PrivateKey privateKey = (PrivateKey) keystore.getKey("private_key", pass); // First arg is the alias
-            System.out.println("Server private key: " + Base64.getEncoder().encodeToString(privateKey.getEncoded()));
-
-            // Decrypt request data
-            Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            decryptedRequest = cipher.doFinal(request);
-        } catch (Exception e) {
-            // TODO: Handle Exception
-            System.out.println(e.getMessage());
-            System.exit(1);
-        }
-        return decryptedRequest;
-    }
-
-    // String decryptWithSymmetric(String encrypted_data, byte[] key) {
-    //     return SymmetricKeyEncryption.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
-    // }
 
     public MongoClient getMongoClient() {
         return this.mongoClient;
