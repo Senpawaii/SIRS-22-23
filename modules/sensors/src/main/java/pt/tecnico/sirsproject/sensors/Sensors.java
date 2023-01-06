@@ -16,6 +16,9 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
+import org.bson.Document;
+import org.bson.types.ObjectId;
+
 import pt.tecnico.sirsproject.security.*;
 
 import java.net.InetSocketAddress;
@@ -165,26 +168,46 @@ public class Sensors {
     }
 
     private void createDatabaseConnection() {
-        ConnectionString connectionString = new ConnectionString(
-                "mongodb://<username>:<password>@<databaseIP>:<databasePort>/SensorsLogs?ssl=true"); //TODO: Place the username/password in a properties.file
+
+        //TODO: fill these 4 fields in the properties file
+        String username = properties.getProperty("db_username");
+        String password = properties.getProperty("db_password");
+        String ip = properties.getProperty("db_ip_address");
+        String port = properties.getProperty("db_port");
+
+        String connect_format = String.format("mongodb://%s:%s@%s:%s/SensorsLogs?ssl=true", username, password, ip, port);
+        ConnectionString connectionString = new ConnectionString(connect_format);
+
         MongoClientSettings settings = MongoClientSettings.builder()
                 .applyToSslSettings(builder -> builder.enabled(true).context(this.sslContext).invalidHostNameAllowed(true))
                 .applyConnectionString(connectionString)
                 .build();
 
         mongoClient = MongoClients.create(settings);
-
     }
 
     public void logClientRequest(String username, boolean success) {
 
         // here you send the log to the database
         //TODO: send these messages to the database
+        String logMessage;
         if (success) {
-            System.out.println(String.format("==> Logging: User %s accessed the sensors with success.", username));
+            logMessage = String.format("Logging: User %s accessed the sensors with success.", username);
         } else {
-            System.out.println(String.format("==> Logging: User %s tried to access the sensors without success.", username));
+            logMessage = String.format("Logging: User %s tried to access the sensors without success.", username);
         }
+
+        System.out.println("==> " + logMessage);
+        storeDocument(logMessage, mongoClient);
+    }
+
+    private static void storeDocument(String message, MongoClient mongoClient) {
+        //TODO: fill database name and collection name appropriately
+        MongoDatabase logs_database = mongoClient.getDatabase("<dbname>");
+        MongoCollection<Document> logs_collection = logs_database.getCollection("<collectionname>");
+        Document log_doc = new Document("_id", new ObjectId());
+        log_doc.append("log", message);
+        logs_collection.insertOne(log_doc);
     }
 
     public MongoClient getMongoClient() {
