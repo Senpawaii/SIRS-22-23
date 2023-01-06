@@ -2,6 +2,7 @@ package pt.tecnico.sirsproject.frontoffice;
 
 import com.sun.net.httpserver.HttpsServer;
 import pt.tecnico.sirsproject.frontoffice.FrontHandlers.PingHandler;
+import pt.tecnico.sirsproject.frontoffice.FrontHandlers.PublicInfoHandler;
 
 import java.io.File;
 
@@ -9,7 +10,6 @@ public class FrontMain {
     static FrontOffice frontoffice;
 
     public static void main(String[] args) {
-        SessionManager manager = new SessionManager();
         int port = -1;
         String ksFile = "";
         
@@ -35,8 +35,9 @@ public class FrontMain {
             System.out.println("Starting server on port " + port + "...");
             HttpsServer server = frontoffice.createTLSServer(port);
             server.createContext("/test", new PingHandler());
-            //server.createContext("/public", new PublicInfoHandler(frontoffice.getManager(), frontoffice.getMongoClient()));
-            //server.createContext("/private", new PrivateInfoHandler(frontoffice.getManager(), frontoffice.getMongoClient()));
+            server.createContext("/public", new PublicInfoHandler(frontoffice.getBackofficeAddr(), frontoffice.getBackofficePort(), 
+                frontoffice.getTrustManagers()));
+            //server.createContext("/private", new PrivateInfoHandler());
             server.setExecutor(null);
             System.out.println("Server started on port " + port + "!");
             server.start();

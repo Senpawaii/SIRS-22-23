@@ -172,6 +172,47 @@ public class BackHandlers {
     //     }
         
     // }
+    
+    public static class FrontAuthenticationHandler implements HttpHandler {
+        private final SessionManager manager;
+
+        public FrontAuthenticationHandler(SessionManager manager) {
+            this.manager = manager;
+        }
+
+        @Override
+        public void handle(HttpExchange ex) throws IOException {
+            HttpsExchange sx = (HttpsExchange) ex;
+            String requestMethod = sx.getRequestMethod();
+            if (!requestMethod.equals("POST")) {
+                //ERROR case
+                return;
+            }
+
+            UserAuthenticatedRequest authenticationRequest;
+            try {
+                authenticationRequest = RequestParsing.parseUserAuthenticatedRequestToJSON(sx);
+            } catch(IOException exception) {
+                System.out.println(exception.getMessage());
+                return;
+            }
+
+            // Verify session token
+            assert authenticationRequest != null;
+            String sessionToken = authenticationRequest.getSession_token();
+            String username = authenticationRequest.getUsername();
+
+            JSONObject response = new JSONObject();
+            if(validate_session(username, sessionToken, manager)) {
+                response.put("authenticated", true);
+                System.out.println("Front Authentication Request: " + username);
+                sendResponse(sx, 200, response.toString());
+            } else {
+                response.put("authenticated", false);
+                sendResponse(sx, 200, response.toString());
+            }
+        }
+    }
 
     public static void sendResponse(HttpsExchange x, int statusCode, String responseBody) throws IOException {
         // TODO: Handle IOException
