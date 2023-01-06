@@ -41,7 +41,7 @@ import java.io.IOException;
 
 
 public class Sensors {
-    private SecretKey currentKey;
+    private SecretKeySpec currentKey;
 
     private static KeyStore keystore;
     private Properties properties;
@@ -66,14 +66,9 @@ public class Sensors {
     }
 
     public void updateCurrentKey(byte[] newKey_seed) {
-        // System.out.println("==> Random encoded key: " + Base64.getEncoder().encodeToString(createAESKey().getEncoded()));
-        // currentKey = new SecretKeySpec(decoded_key, 0, decoded_key.length, "AES");
-        System.out.println("Updating...");
-        // this.currentKey = createAESKey(newKey_seed);
-        // System.out.println("==> New encoded key: " + Base64.getEncoder().encodeToString(this.currentKey.getEncoded()));
-
         SecretKeySpec newKey = new SecretKeySpec(newKey_seed, 0, 16, "AES");
-        // this.currentKey = 
+        this.currentKey = newKey;
+        System.out.println("==> New key (b64): " + getEncodedCurrentKey());
     }
 
     private void loadProperties() {

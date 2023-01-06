@@ -18,6 +18,7 @@ import pt.tecnico.sirsproject.security.SymmetricKeyEncryption;
 import pt.tecnico.sirsproject.security.TLS_SSL;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -52,7 +53,7 @@ public class BackOffice {
         setKeyManagers();
         initSensorKeyManagement();
         setSSLContext();
-        createSensorKey();
+        // createSensorKey();
         createDatabaseConnection();
         // populateDB();
     }
@@ -92,7 +93,7 @@ public class BackOffice {
     }
 
     private void createSensorKey() {
-        this.sensorKey = new SensorKey("DUMMY");
+        // this.sensorKey = new SensorKey("DUMMY");
     }
 
     private void loadProperties() {
@@ -188,9 +189,9 @@ public class BackOffice {
         return decryptedRequest;
     }
 
-    String decryptWithSymmetric(String encrypted_data, byte[] key) {
-        return SymmetricKeyEncryption.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
-    }
+    // String decryptWithSymmetric(String encrypted_data, byte[] key) {
+    //     return SymmetricKeyEncryption.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
+    // }
 
     public SensorKey getSensorKey() {
         return this.sensorKey;
@@ -205,7 +206,7 @@ public class BackOffice {
 
         Runnable sensorKeyRunnable = new Runnable() {
             public void run() {
-                String newKey = null;
+                SecretKeySpec newKey = null;
                 
                 try {
                     newKey = sensorKeyManager.createNewSensorKey();
@@ -214,7 +215,7 @@ public class BackOffice {
                     // e.printStackTrace();
                     return;
                 }
-                System.out.println("==> New sensor key: " + newKey);
+                System.out.println("==> New sensor key (b64): " + Base64.getEncoder().encodeToString(newKey.getEncoded()));
 
                 sensorKey = new SensorKey(newKey);
             }

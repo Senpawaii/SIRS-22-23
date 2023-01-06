@@ -128,47 +128,13 @@ public class SensorsHandlers {
                 sensorsKeyAgree.doPhase(officePubKey, true);
 
                 byte[] sensorsSharedSecret = sensorsKeyAgree.generateSecret();
-                int sensorsLen = sensorsSharedSecret.length;
-
-                System.out.println("==> Secret: " + toHexString(sensorsSharedSecret));
+                // int sensorsLen = sensorsSharedSecret.length;
 
                 sensors.updateCurrentKey(sensorsSharedSecret);
                 sx.close();
             } catch (NoSuchAlgorithmException | InvalidKeySpecException | InvalidAlgorithmParameterException | InvalidKeyException e) {
                 e.printStackTrace();
             }
-
-            // UpdateSensorsKeyRequest req = null;
-            // try {
-            //     req = RequestParsing.parseUpdateSensorsKeyRequestToJSON(sx);
-
-            //     if (req.getP_prime() == null || req.getG_root() == null || req.getBigA() == null) {
-            //         sx.sendResponseHeaders(400, -1);
-            //         return;
-            //     }
-            // } catch (IOException e) {
-            //     e.printStackTrace();
-            //     sx.sendResponseHeaders(400, -1);
-            //     return;
-            // }
-
-            // BigInteger p = new BigInteger(req.getP_prime());
-            // BigInteger g = new BigInteger(req.getG_root());
-            // BigInteger bigA = new BigInteger(req.getBigA());
-
-            // // BigInteger b_secret = BigIntegers.createRandomInRange(new BigInteger("100000000"), new BigInteger("1000000000000"), new SecureRandom());
-            // BigInteger b_secret = BigIntegers.createRandomPrime(2048, 0, new SecureRandom());
-            // BigInteger bigB = g.modPow(b_secret, p);
-            // String bigB_str = bigB.toString();
-
-            // BigInteger newSecret = bigA.modPow(b_secret, p);
-            // String newKey_seed = Base64.getEncoder().encodeToString(newSecret.toByteArray());
-            // sensors.updateCurrentKey(newKey_seed);
-
-            // UpdateSensorsKeyResponse response = new UpdateSensorsKeyResponse(bigB_str);
-            // Gson gson = new Gson();
-            // String response_json = gson.toJson(response);
-            // sendResponse(sx, 200, response_json);
         }
         static String removeQuotesAndUnescape(String uncleanJson) {
             String noQuotes = uncleanJson.replaceAll("^\"|\"$", "");
@@ -209,7 +175,7 @@ public class SensorsHandlers {
 
             HttpsExchange sx = (HttpsExchange) x;
             String requestMethod = sx.getRequestMethod();
-            if (!requestMethod.equals("GET")) {
+            if (!requestMethod.equals("POST")) {
                 // wrong method
                 sx.sendResponseHeaders(405, -1);
                 return;
@@ -217,21 +183,30 @@ public class SensorsHandlers {
 
             ClientSensorsRequest req = null;
             try {
-                req = RequestParsing.parseClientSensorsRequestToJSON(sx, currentKey);
-            } catch (IOException | SensorsDecryptionException e) {
+                req = RequestParsing.parseClientSensorsRequestToJSON(sx);
+            } catch (IOException e) {
                 // bad request
                 sx.sendResponseHeaders(400, -1);
-                sx.getResponseBody().close();
+                return;
             }
 
-            String username = req.getUsername();
+            String encryptedUsername = req.getUsername();
+            String encryptedToken = req.getToken();
+            byte[] iv = Base64.getDecoder().decode(req.getIv());
+            Container<byte[]> _ivContainer = new Container<>(iv);
+            String username = SymmetricKeyEncryption.decrypt(encryptedUsername, currentKey, iv);
+            String token = SymmetricKeyEncryption.decrypt(encryptedToken, currentKey, iv);
 
-            JSONObject response = new JSONObject();
-            response.put("content", String.format("Hello from the Sensors/Actuators, %s.", username));
+            //TODO: validate with backoffice
+
+            String content = String.format("Hello from the Sensors/Actuators, engineer %s (with token %s).", username, token);
+            String encryptedContent = SymmetricKeyEncryption.encrypt(content, currentKey, _ivContainer, true);
+            String encodedIV = Base64.getEncoder().encodeToString(iv);
             
-            // ClientSensorsResponse response = new ClientSensorsResponse(String.format("Hello from the Sensors/Actuators, %s.", username));
-            // Gson gson = new Gson();
-            String response_json = response.toString();
+            ClientSensorsResponse response = new ClientSensorsResponse(encryptedContent, encodedIV);
+            Gson gson = new Gson();
+            String response_json = gson.toJson(response);
+
             sendResponse(sx, 200, response_json);
 
             sensors.logClientRequest(username);

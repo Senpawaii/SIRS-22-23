@@ -32,11 +32,6 @@ import pt.tecnico.sirsproject.security.UpdateSensorsKeyRequest;
 import pt.tecnico.sirsproject.security.UpdateSensorsKeyResponse;
 
 public class SensorKeyManager {
-    private BigInteger p_prime;
-    private BigInteger g_root;
-    private BigInteger a_secret;
-    private BigInteger bigA;
-    private BigInteger bigB;
     private final String sensors_ip;
     private final String sensors_port;
     private TrustManager[] trustManagers;
@@ -52,13 +47,6 @@ public class SensorKeyManager {
     }
 
     private boolean generateParameters() {
-        // p_prime = new BigInteger("85053461164796801949539541639542805770666392330682673302530819774105141531698707146930307290253537320447270457");
-        // g_root = new BigInteger("2");
-        
-        // // a_secret = BigIntegers.createRandomBigInteger(64, new SecureRandom());
-        // a_secret = BigIntegers.createRandomPrime(2048, 0, new SecureRandom());
-        // bigA = g_root.modPow(a_secret, p_prime);
-
         try {
             KeyPairGenerator officeKeyPairGen = KeyPairGenerator.getInstance("DH");
             officeKeyPairGen.initialize(2048);
@@ -76,7 +64,7 @@ public class SensorKeyManager {
         }
     }
 
-    public String createNewSensorKey() throws KeyManagementException, NoSuchAlgorithmException, IOException {
+    public SecretKeySpec createNewSensorKey() throws KeyManagementException, NoSuchAlgorithmException, IOException {
 
         byte[] newKey_seed = executeDiffieHellman();
         if (newKey_seed == null) {
@@ -84,29 +72,13 @@ public class SensorKeyManager {
         }
 
         SecretKeySpec secretKeySpec = new SecretKeySpec(newKey_seed, 0, 16, "AES");
-        return Base64.getEncoder().encodeToString(secretKeySpec.getEncoded());
-        // SecretKey newKey = createAESKey(newKey_seed);
-        // return Base64.getEncoder().encodeToString(newKey.getEncoded());
-        
-        // String encoded_seed = Base64.getEncoder().encodeToString(newKey_seed.toByteArray());
-        // System.out.println("==> New seed: " + encoded_seed);
-
-        // SecretKey newKey = createAESKey(newKey_seed.toByteArray());
-        // String finalSymmetricKey = newKey.toString();
-
-        // return Base64.getEncoder().encodeToString(finalSymmetricKey.getBytes());
-        // return Base64.getEncoder().encodeToString(newKey.getEncoded());
+        return secretKeySpec;
     }
 
     private byte[] executeDiffieHellman() throws NoSuchAlgorithmException, KeyManagementException, IOException {
 
         System.out.println("==> Starting execution of Diffie-Helman!!");
         generateParameters();
-
-        // UpdateSensorsKeyRequest request = new UpdateSensorsKeyRequest(p_prime.toString(), g_root.toString(), bigA.toString());
-        
-        // Gson gson = new Gson();
-        // String json = gson.toJson(request);
         
         JSONObject request = new JSONObject();
         request.put("pub_key", Base64.getEncoder().encodeToString(officePubKeyEncoded));
@@ -135,23 +107,13 @@ public class SensorKeyManager {
             officeKeyAgree.doPhase(sensorsPubKey, true);
 
             byte[] officeSharedSecret = officeKeyAgree.generateSecret();
-            int officeLen = officeSharedSecret.length;
-
-            System.out.println("==> Secret: " + toHexString(officeSharedSecret));
+            // int officeLen = officeSharedSecret.length;
 
             return officeSharedSecret;
         } catch (InvalidKeySpecException | InvalidKeyException | IllegalStateException e) {
             e.printStackTrace();
         }
         
-
-        // String response_clean = StringEscapeUtils.unescapeJava(response_json.replaceAll("^\"|\"$", ""));
-        // UpdateSensorsKeyResponse response = gson.fromJson(response_clean, UpdateSensorsKeyResponse.class);
-        
-        // bigB = new BigInteger(response.getBigB());
-        // BigInteger newSecret = bigB.modPow(a_secret, p_prime);
-        
-        // return newSecret;
         return null;
     }
 

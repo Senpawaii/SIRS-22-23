@@ -3,6 +3,7 @@ package pt.tecnico.sirsproject.client;
 import com.google.gson.Gson;
 import pt.tecnico.sirsproject.security.*;
 
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.TrustManager;
 import java.io.*;
 import java.security.KeyStore;
@@ -108,29 +109,42 @@ public class Client {
 
         SensorKeyResponse sensorResponse = gson.fromJson(response, SensorKeyResponse.class);
 
-        String sensorKey = sensorResponse.getSymmetricKey();
+        String sensorKey_b64 = sensorResponse.getSymmetricKey();
 
-        if(sensorKey.equals("None")) {
+        if(sensorKey_b64.equals("None")) {
             String cause = sensorResponse.getExtra_message();
             throw new Exception(cause);
         }
-        this.sensorKey = new SensorKey(sensorKey);
+        SecretKeySpec spec = new SecretKeySpec(Base64.getDecoder().decode(sensorKey_b64.getBytes()), 0, 16, "AES");
+        this.sensorKey = new SensorKey(spec);
     }
 
     public void accessSensors() {
         Gson gson = new Gson();
 
-        ClientSensorsRequest request = new ClientSensorsRequest(this.username);
-        String json = gson.toJson(request);
-        String encrypted_json = SymmetricKeyEncryption.encrypt(json, this.sensorKey.getSymmetricKey());
+        Container<byte[]> _ivContainer = new Container<>();
+        String encryptedUsername = SymmetricKeyEncryption.encrypt(this.username, 
+                                        Base64.getEncoder().encodeToString(this.sensorKey.getSymmetricKey().getEncoded()), _ivContainer, true);
 
-        String response = ClientCommunications.connect_to_sensors(encrypted_json, "GET", "/getinfo", 
+        String encryptedToken = SymmetricKeyEncryption.encrypt(this.token, 
+                                    Base64.getEncoder().encodeToString(this.sensorKey.getSymmetricKey().getEncoded()), _ivContainer, false);
+
+        String encodedIV = Base64.getEncoder().encodeToString(_ivContainer.item);
+
+        ClientSensorsRequest request = new ClientSensorsRequest(encryptedUsername, encryptedToken, encodedIV);
+        String json = gson.toJson(request);
+
+        String response_json = ClientCommunications.connect_to_sensors(json, "GET", "/getinfo", 
                             this.sensors_address, this.sensors_port, trustManagers);
 
-        String decrypted_response = SymmetricKeyEncryption.decrypt(response, this.sensorKey.getSymmetricKey());
+        ClientSensorsResponse response = gson.fromJson(response_json, ClientSensorsResponse.class);
+        String encryptedContent = response.getContent();
+        byte[] responseIV = Base64.getDecoder().decode(response.getIv());
+
+        String decryptedContent = SymmetricKeyEncryption.decrypt(encryptedContent, Base64.getEncoder().encodeToString(this.sensorKey.getSymmetricKey().getEncoded()), responseIV);
         
-        if (decrypted_response != null) {
-            System.out.println(decrypted_response);
+        if (decryptedContent != null) {
+            System.out.println(decryptedContent);
         }
     }
 

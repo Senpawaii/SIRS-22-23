@@ -53,16 +53,10 @@ public class RequestParsing {
         return null;
     }
 
-    public static ClientSensorsRequest parseClientSensorsRequestToJSON(HttpsExchange exc, String key) throws IOException, SensorsDecryptionException {
+    public static ClientSensorsRequest parseClientSensorsRequestToJSON(HttpsExchange exc) throws IOException {
         InputStreamReader isr = new InputStreamReader(exc.getRequestBody(), StandardCharsets.UTF_8);
         BufferedReader br = new BufferedReader(isr);
         String requestBody = removeQuotesAndUnescape(br.readLine());
-
-        String decryptedRequest = SymmetricKeyEncryption.decrypt(requestBody, key);
-        if (decryptedRequest == "") {
-            // unable to decrypt, probably wrong key
-            throw new SensorsDecryptionException("Unable to decrypt client request.");
-        }
 
         Gson gson = new Gson();
         try {

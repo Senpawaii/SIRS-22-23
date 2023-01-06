@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Base64;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
@@ -145,8 +146,9 @@ public class BackHandlers {
             JSONObject response = new JSONObject();
             if(validate_session(username, sessionToken, manager)) {
                 if(accessControlManager.hasAccess(username, SENSOR_CLEARANCE)) {
-                    response.put("symmetricKey", this.backoffice.getSensorKey().getSymmetricKey());
-                    System.out.println("SensorKey Request:" + username + " sensorKey: " + this.backoffice.getSensorKey());
+                    String encodedKey = Base64.getEncoder().encodeToString(this.backoffice.getSensorKey().getSymmetricKey().getEncoded());
+                    response.put("symmetricKey", encodedKey);
+                    System.out.println("SensorKey Request:" + username + " sensorKey (b64): " + encodedKey);
                     sendResponse(sx, 200, response.toString());
                 } else {
                     response.put("symmetricKey", "None");
@@ -158,11 +160,18 @@ public class BackHandlers {
                 response.put("extra_message", "Invalid credentials.");
                 sendResponse(sx, 200, response.toString());
             }
-            if(this.manager.hashActiveSession(username)){
-
-            }
         }
     }
+
+    // public static class SensorAuthHandler implements HttpHandler {
+    //     private BackOffice
+    //     @Override
+    //     public void handle(HttpExchange x) throws IOException {
+            
+            
+    //     }
+        
+    // }
 
     public static void sendResponse(HttpsExchange x, int statusCode, String responseBody) throws IOException {
         // TODO: Handle IOException

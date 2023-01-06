@@ -177,9 +177,9 @@ public class FrontOffice {
         return decryptedRequest;
     }
 
-    String decryptWithSymmetric(String encrypted_data, byte[] key) {
-        return SymmetricKeyEncryption.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
-    }
+    // String decryptWithSymmetric(String encrypted_data, byte[] key) {
+    //     return SymmetricKeyEncryption.decrypt(encrypted_data, Base64.getEncoder().encodeToString(key));
+    // }
 
     public SessionManager getManager() {
         return this.manager;
